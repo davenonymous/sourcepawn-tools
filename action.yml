@@ -1,0 +1,109 @@
+# Copyright 2026 davenonymous
+#
+# SourcePawn Lint: runs pawncritic (and pawntidy --check) over SourcePawn code.
+# The logic is action/lint.py; see docs/github-action.md.
+
+name: SourcePawn Lint
+description: Check SourcePawn plugins and includes with pawncritic and pawntidy.
+author: davenonymous
+branding:
+  icon: code
+  color: orange
+
+inputs:
+  paths:
+    description: Files and directories to check, one per line.
+    default: .
+  version:
+    description: >-
+      The sourcepawn-tools release to run, such as 0.1.0. Empty runs the release matching the action's own version;
+      `source` builds the tools from the action's sources (for testing the action).
+    default: ""
+  severity:
+    description: pawncritic --severity, 1 to 5 or a name. Empty uses the configuration file or the default (3).
+    default: ""
+  theme:
+    description: pawncritic --theme expression.
+    default: ""
+  config:
+    description: pawncritic --config file used for every file.
+    default: ""
+  args:
+    description: Further pawncritic arguments, split like a shell command line.
+    default: ""
+  tidy:
+    description: Also run pawntidy --check.
+    default: "false"
+  tidy-args:
+    description: Further pawntidy arguments, split like a shell command line.
+    default: ""
+  sarif:
+    description: >-
+      Write SARIF and upload it to code scanning instead of annotations. Needs the permission security-events: write.
+    default: "false"
+  changed-only:
+    description: Check only the SourcePawn files a pull request or push changed.
+    default: "false"
+  fail-on-violations:
+    description: Fail on violations and unformatted files; when false only broken runs fail.
+    default: "true"
+
+outputs:
+  violations:
+    description: The number of pawncritic violations.
+    value: ${{ steps.lint.outputs.violations }}
+  unformatted:
+    description: The number of files pawntidy would reformat.
+    value: ${{ steps.lint.outputs.unformatted }}
+  sarif-file:
+    description: The path of the SARIF file, when sarif is true and pawncritic wrote one.
+    value: ${{ steps.lint.outputs.sarif-file }}
+  version:
+    description: The sourcepawn-tools version that ran.
+    value: ${{ steps.lint.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - id: lint
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_SEVERITY: ${{ inputs.severity }}
+        INPUT_THEME: ${{ inputs.theme }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_ARGS: ${{ inputs.args }}
+        INPUT_TIDY: ${{ inputs.tidy }}
+        INPUT_TIDY_ARGS: ${{ inputs.tidy-args }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_CHANGED_ONLY: ${{ inputs.changed-only }}
+        INPUT_FAIL_ON_VIOLATIONS: ${{ inputs.fail-on-violations }}
+      run: |
+        python=python3
+        if [ "$RUNNER_OS" = Windows ]; then python=python; fi
+        "$python" -I "$GITHUB_ACTION_PATH/action/lint.py"
+
+    - id: upload
+      if: inputs.sarif == 'true' && steps.lint.outputs.sarif-file != ''
+      continue-on-error: true
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.lint.outputs.sarif-file }}
+        category: pawncritic
+
+    - if: steps.upload.outcome == 'failure'
+      shell: bash
+      run: >-
+        echo "::warning title=SourcePawn Lint::The SARIF upload failed (does the job have security-events: write,
+        and code scanning on this repository?); the job summary lists the first 200 violations."
+
+    - if: steps.lint.outputs.failed == 'true'
+      shell: bash
+      env:
+        REASON: ${{ steps.lint.outputs.failure-reason }}
+      run: |
+        echo "::error title=SourcePawn Lint::$REASON"
+        exit 1

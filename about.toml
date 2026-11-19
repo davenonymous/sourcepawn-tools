@@ -1,0 +1,16 @@
+# The licenses the release archives may contain; cargo-about fails on any
+# other, and THIRD-PARTY-LICENSES.md is written from them (see about.hbs).
+accepted = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+]
+ignore-build-dependencies = true
+ignore-dev-dependencies = true

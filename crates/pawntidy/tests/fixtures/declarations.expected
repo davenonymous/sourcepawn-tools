@@ -1,0 +1,31 @@
+enum Color {
+	Red,
+	Green = 2,
+	Blue
+};
+
+enum struct Point {
+	int x;
+	int y;
+	float Length() {
+		return 0.0;
+	}
+}
+
+typeset Callbacks {
+	function void (int client);
+	function void ();
+};
+
+typedef Simple = function Action (int client, int args);
+
+public Plugin myinfo = {
+	name = "Example",
+	author = "davenonymous",
+};
+
+new old_style = 1;
+new Float:g_old[3];
+stock Float:operator+(Float:a, Float:b) {
+	return FloatAdd(a, b);
+}

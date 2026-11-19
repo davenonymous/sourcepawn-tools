@@ -1,0 +1,113 @@
+# Copyright 2026 davenonymous
+#
+# On a pushed tag vX.Y.Z: builds pawncritic and pawntidy for every platform,
+# packs each with LICENSE, README.md and THIRD-PARTY-LICENSES.md, publishes
+# the GitHub release with SHA256SUMS and the tag's CHANGELOG.md section, and
+# moves the major tag vX to it (what `uses: ...@vX` runs).
+
+name: release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux-x86_64
+            exe: ""
+            rustflags: ""
+          - runner: windows-latest
+            platform: windows-x86_64
+            exe: .exe
+            # The C runtime linked in, so the binaries need no vcruntime140.dll.
+            rustflags: -C target-feature=+crt-static
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+
+      - name: Check that the tag is the workspace version
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match the workspace version ${version} in Cargo.toml"
+            exit 1
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: cargo build --workspace --release --locked
+        env:
+          RUSTFLAGS: ${{ matrix.rustflags }}
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.3
+      - run: cargo about generate --locked about.hbs -o THIRD-PARTY-LICENSES.md
+
+      - name: Pack
+        run: |
+          stem="sourcepawn-tools-${VERSION}-${{ matrix.platform }}"
+          mkdir -p "pack/${stem}"
+          cp "target/release/pawncritic${{ matrix.exe }}" "target/release/pawntidy${{ matrix.exe }}" \
+            LICENSE README.md THIRD-PARTY-LICENSES.md "pack/${stem}/"
+          cd pack
+          if [ "${{ matrix.platform }}" = windows-x86_64 ]; then
+            7z a -tzip "${stem}.zip" "${stem}" >/dev/null
+          else
+            tar -czf "${stem}.tar.gz" "${stem}"
+          fi
+          rm -rf "${stem}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: pack/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v heading="## ${version}" '
+            $0 == heading { inside = 1; next }
+            inside && /^## / { exit }
+            inside { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section ## ${version}"
+            exit 1
+          fi
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd assets && sha256sum * > SHA256SUMS)
+          gh release create "${GITHUB_REF_NAME}" assets/* --title "${GITHUB_REF_NAME}" --notes-file notes.md
+
+      - name: Move the major tag
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git tag --force "${major}" "${GITHUB_SHA}"
+          git push --force origin "refs/tags/${major}"

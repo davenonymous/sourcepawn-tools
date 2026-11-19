@@ -1,0 +1,43 @@
+
+
+#pragma semicolon 1
+
+
+
+int g_a;
+void f()
+{
+
+	int a;
+
+
+
+	int b;
+
+}
+
+void g() { // after the brace
+
+	int c; // trailing
+
+}
+
+void h() // moved behind the brace
+{
+
+	int d;
+#if defined X
+	int e;
+#endif
+
+}
+
+int g_Table[][] = {
+
+	{
+
+		1
+
+	}
+
+};

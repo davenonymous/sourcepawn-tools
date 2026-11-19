@@ -1,0 +1,18 @@
+#include <sourcemod>
+  #define VALUE 1 // the value
+#define MACRO(%1) \
+	(%1 + 1)
+
+void Conditional()
+{
+	if (a)
+#if defined DEBUG
+		Debug();
+#else
+		Release();
+#endif
+	b();
+		#if defined X
+	c();
+		#endif
+}

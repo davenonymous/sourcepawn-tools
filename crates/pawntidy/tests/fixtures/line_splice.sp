@@ -1,0 +1,9 @@
+int Spliced() {
+	return \
+5;
+}
+
+void Formatted()
+{
+	if (a) b();
+}

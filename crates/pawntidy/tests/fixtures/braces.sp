@@ -1,0 +1,44 @@
+public void OnPluginStart()
+{
+	if (a)
+		b();
+	else if (c)
+	{
+		d();
+	}
+	else
+		e();
+
+	for (int i = 0; i < 3; i++)
+		if (f(i))
+			g(i);
+
+	while (h())
+	{
+		i();
+	}
+	do
+		j();
+	while (k());
+
+	switch (l)
+	{
+		case 1:
+			m();
+		case 2, 3:
+		{
+			n();
+		}
+		default:
+			o();
+	}
+}
+
+void Empty() {}
+
+void Nested()
+{
+	{
+		int scoped = 1;
+	}
+}

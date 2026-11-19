@@ -1,0 +1,4 @@
+# The test fixtures must keep their exact bytes: line endings, byte order
+# marks and trailing whitespace are what some of them test.
+crates/*/tests/fixtures/** -text
+crates/*/tests/policies/** -text

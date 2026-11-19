@@ -1,0 +1,4 @@
+continuation = "indent"
+cuddle_else = false
+space_before_control_paren = false
+max_line_length = 100

@@ -1,0 +1,11 @@
+public void OnPluginStart()
+{
+	g_Cvar = CreateConVar("sm_example_enabled", "1", "Whether the example runs at all; 0 stops it", _, true, 0.0, true, 1.0);
+	if (a) {
+		b();
+	}
+	else {
+		c();
+	}
+	if(d) { e(); }
+}

@@ -1,0 +1,32 @@
+# Copyright 2026 davenonymous
+
+[package]
+name = "pawncritic"
+description = "A policy-based linter for SourcePawn, with policies in Lua"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "pawncritic"
+path = "src/main.rs"
+
+[dependencies]
+anstyle.workspace = true
+clap.workspace = true
+mlua.workspace = true
+pawn-core.workspace = true
+pawntidy.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+tree-sitter.workspace = true
+unicode-width.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

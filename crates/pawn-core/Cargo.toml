@@ -1,0 +1,23 @@
+# Copyright 2026 davenonymous
+
+[package]
+name = "pawn-core"
+description = "Source files, lexer, syntax tree, file discovery and command line plumbing shared by pawncritic and pawntidy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+anstream.workspace = true
+clap.workspace = true
+ignore.workspace = true
+thiserror.workspace = true
+tree-sitter.workspace = true
+tree-sitter-sourcepawn.workspace = true
+unicode-width.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

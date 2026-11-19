@@ -1,0 +1,82 @@
+# Copyright 2026 davenonymous
+#
+# On every push and pull request: formatting, lints and tests of the tools on
+# Linux and Windows, and the action itself run on tests/action/ with tools
+# built from this commit.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+      - run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+
+  action:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+
+      - name: A clean plugin passes
+        id: clean
+        uses: ./
+        with:
+          version: source
+          paths: tests/action/clean
+          tidy: true
+
+      - name: A plugin with violations is reported
+        id: dirty
+        uses: ./
+        with:
+          version: source
+          paths: tests/action/dirty
+          tidy: true
+          fail-on-violations: false
+
+      - name: A plugin with violations fails the step
+        id: failing
+        continue-on-error: true
+        uses: ./
+        with:
+          version: source
+          paths: tests/action/dirty
+
+      - name: Check the outputs
+        env:
+          CLEAN_VIOLATIONS: ${{ steps.clean.outputs.violations }}
+          CLEAN_UNFORMATTED: ${{ steps.clean.outputs.unformatted }}
+          DIRTY_VIOLATIONS: ${{ steps.dirty.outputs.violations }}
+          DIRTY_UNFORMATTED: ${{ steps.dirty.outputs.unformatted }}
+          FAILING_OUTCOME: ${{ steps.failing.outcome }}
+        run: |
+          set -x
+          test "$CLEAN_VIOLATIONS" = 0
+          test "$CLEAN_UNFORMATTED" = 0
+          test "$DIRTY_VIOLATIONS" -gt 0
+          test "$DIRTY_UNFORMATTED" = 1
+          test "$FAILING_OUTCOME" = failure
