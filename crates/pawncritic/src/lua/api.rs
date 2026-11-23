@@ -805,6 +805,9 @@ mod tests {
     fn an_unknown_library_names_the_known_ones() {
         let error = state().load(r#"return pawn.library("../policies/x")"#).exec().unwrap_err();
         let message = sandbox::describe_error(&error);
-        assert!(message.contains("there is no library `../policies/x`; the libraries are declarations, "), "{message}");
+        assert!(
+            message.contains("there is no library `../policies/x`; the libraries are calls, declarations, "),
+            "{message}"
+        );
     }
 }

@@ -4,9 +4,10 @@ Command line tools for SourcePawn, the scripting language of SourceMod plugins, 
 perltidy, and a GitHub Action that runs them:
 
 - **`pawncritic`** checks `.sp` and `.inc` files against policies and reports every violation, with a severity from 5
-  to 1. Its 31 built-in policies (29 in Lua, 2 native: `Core::RequireParsableCode`, `CodeLayout::RequireTidyCode`)
-  cover old syntax and API, likely bugs, early exits and naming, complexity, declarations and layout; see
-  [Built-in policies](docs/pawncritic.md#built-in-policies). Custom policies are `.lua` files in a policy directory.
+  to 1. Its 47 built-in policies (45 in Lua, 2 native: `Core::RequireParsableCode`, `CodeLayout::RequireTidyCode`)
+  cover old syntax and API, likely bugs, security risks and malicious code, early exits and naming, complexity,
+  declarations and layout; see [Built-in policies](docs/pawncritic.md#built-in-policies). The security policies are
+  heuristics: a clean run does not prove a plugin safe. Custom policies are `.lua` files in a policy directory.
 - **`pawntidy`** formats `.sp` and `.inc` files: tabs (or, if configured, spaces) for indentation, spaces only to
   align, opening braces on the line of their statement, braces around the bodies of `if`, `else`, `for`, `while`, `do`, `case` and `default`
   except where it sees that braces could change the program (such as a body with a directive in it or one that may
@@ -32,6 +33,7 @@ The documentation is in the [`docs/`](#documentation) directory of the repositor
 - [Documentation](#documentation)
 - [Building and testing](#building-and-testing)
 - [Releasing](#releasing)
+- [AI disclosure](#ai-disclosure)
 - [License](#license)
 - [Code layout](#code-layout)
 
@@ -248,6 +250,10 @@ The tag runs `.github/workflows/release.yml`, which:
    release with the archives, `SHA256SUMS` and that section as its text;
 6. moves the major tag `vX` to the release's commit, so that `uses: davenonymous/sourcepawn-tools@vX` runs it.
 
+## AI disclosure
+
+AI helped build these tools. If that bothers you, no hard feelings - this project is just not for you.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The release archives contain `THIRD-PARTY-LICENSES.md` with the licenses of the crates
@@ -275,8 +281,8 @@ crates/pawncritic/
   Cargo.toml                     the crate's dependencies and its binary
   policies/                      the built-in Lua policies, one file per policy in a directory per category,
                                  compiled into the binary
-  policies/lib/                  the built-in Lua libraries the policies share (pawn.library): declarations,
-                                 functions, lines, tags
+  policies/lib/                  the built-in Lua libraries the policies share (pawn.library): calls,
+                                 declarations, functions, lines, paths, tags, taint
   src/lib.rs                     the crate root: its modules
   src/builtin.rs                 the lists of built-in policies and libraries, and the tests that they are complete
                                  and the libraries documented

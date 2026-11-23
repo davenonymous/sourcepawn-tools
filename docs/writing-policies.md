@@ -813,8 +813,23 @@ The library's code runs in the calling policy's own state, under its limits, the
 every later call in the state returns the same table. An unknown name raises this error:
 
 ```text
-pawn.library: there is no library `NAME`; the libraries are declarations, functions, lines, tags
+pawn.library: there is no library `NAME`; the libraries are calls, declarations, functions, lines, paths, tags, taint
 ```
+
+#### Library `calls`
+
+`pawn.library("calls")`: calls, their arguments and the values of string literals; the base of the `Malicious::` and
+`Security::` policies.
+
+| Member | Returns |
+|--------|---------|
+| `calls.call_kinds` | The node kinds that call something by name: `call_expression` and `new_expression`. Pass it to `file:find`. |
+| `calls.name(call)` | Two values: the name a `call_expression` or `new_expression` calls, and whether it is a method. `Name(...)` gives `"Name", false`, `x.Name(...)` gives `"Name", true`, `new Name(...)` gives `"Name", false`; any other callee gives `nil`. |
+| `calls.arguments(call)` | A list of the argument nodes of a call, comments left out; empty when it has none. |
+| `calls.string_value(node)` | The value of a `string_literal`, or of a `binary_expression` with the operator `...` whose sides both have one, with its escapes decoded: `\xNN` (hex) and `\NNN` (decimal), each with an optional `;`, `\n`, `\r`, `\t`, `\a`, `\b`, `\f`, `\v`, `\e`, and any other escaped character as itself. `nil` for any other node. |
+| `calls.builders` | A table mapping the functions that write a string into a buffer to `{ output = N, template = M }`, the positions of the buffer and of the text written: `Format`, `FormatEx`, `VFormat`, `strcopy`, `StrCat` (1 and 3) and `BuildPath` (2 and 4). |
+| `calls.literal_sources(argument)` | A list of the literal values an argument node stands for, each `{ node, value, builder, builder_call }`: the argument itself when `calls.string_value` has a value for it (without `builder`); for an `identifier`, the template literal of each call of `calls.builders` (not a method) that starts before the argument in the same function and has the identifier as its buffer, with the builder's name and call. Empty otherwise, also at the top level. |
+| `calls.parse_positions(list, option)` | For a list option of entries `Name:N` or `Name:N,M`: a table mapping each name to the list of its numbers. A malformed entry raises ``option `OPTION`: `ENTRY` is not of the form Name:N``. The result is kept for as long as `list` is the same table, so it may be called for every file. |
 
 #### Library `declarations`
 
@@ -894,6 +909,20 @@ local lines = pawn.library("lines")
     end,
 ```
 
+#### Library `paths`
+
+`pawn.library("paths")`: the literal paths of a file that reach a file function, and where they lead. The analysis of
+the `Security::` file policies.
+
+| Member | Returns |
+|--------|---------|
+| `paths.default_file_functions` | The default of the `file_functions` options, as `Name:N` entries; listed under `Security::ProhibitAbsolutePaths` in [pawncritic.md](pawncritic.md#securityprohibitabsolutepaths). |
+| `paths.default_write_functions` | The default of the `write_functions` option of `Security::ProhibitCodeFileWrites`. |
+| `paths.path_literals(file, specs)` | For `specs` from `calls.parse_positions`: a list of every path literal of `file`, each the table of `calls.literal_sources` for an argument at a listed position of a listed function, with two more keys: `call`, the file function's call, and `base`, where the path starts: `""` (the game directory), `"addons/sourcemod/"` for `BuildPath(Path_SM, ...)`, or `nil` for a value that starts with `%` or a `BuildPath()` with another path type. The path of every `BuildPath()` (not a method) also appears once without `call`. |
+| `paths.resolve(value, base)` | Two values: the path of `value` from `base`, in lower case, with `\` as `/` and no `.`, `..` or empty parts, and `false`; or `nil` and `true` when a `..` climbs above the game directory; or `nil` and `false` for an absolute path or a `nil` base. |
+| `paths.is_absolute(value)` | `true` when `value` starts with `/`, `\` or a drive letter and `:`. |
+| `paths.writes(call, specs)` | `true` when the call's function is in `specs` (from `calls.parse_positions`) and, for a call (not a method) of `OpenFile`, its mode is a literal with `w`, `a` or `+`, or no literal. |
+
 #### Library `tags`
 
 `pawn.library("tags")`: the tags of old Pawn, such as `Float:`.
@@ -901,6 +930,18 @@ local lines = pawn.library("lines")
 | Member | Returns |
 |--------|---------|
 | `tags.name(tag)` | The name of a tag as written: when `tag` ends with `:`, the text before the colon without the whitespace at its start and end (`Float:` and `Float :` give `Float`); otherwise `tag` unchanged. |
+
+#### Library `taint`
+
+`pawn.library("taint")`: client input within one function, as described for `Security::ProhibitCommandInjection` in
+[pawncritic.md](pawncritic.md#securityprohibitcommandinjection).
+
+| Member | Returns |
+|--------|---------|
+| `taint.default_sources` | The default of the `sources` options: the calls that fill a buffer with client input, as `Name:N` entries. |
+| `taint.default_forwards` | The default of the `forwards` options: the forwards whose parameters hold client input. |
+| `taint.default_propagators` | The default of the `propagators` options: the calls that write their other arguments into a buffer. |
+| `taint.analyze(function_node, specs)` | For a node of one of `functions.kinds` and a table with the keys `sources`, `forwards`, `propagators` and `sanitizers`, each from `calls.parse_positions` (`sanitizers` may be empty): a function that takes an argument node and returns `true` when it is an `identifier` that holds client input at its position. A node of another kind raises `taint.analyze: the node is no function`. |
 
 ## The sandbox
 

@@ -137,6 +137,11 @@ A test file of the repository: a SourcePawn file with a header naming a policy a
 pawntidy input with its expected output.
 _Avoid_: test case, sample
 
+**Client input**:
+Text a player controls, such as a name, a chat message or a command argument, held in a variable of the function
+that received it.
+_Avoid_: user input, tainted data, untrusted input
+
 ### pawntidy
 
 **Style**:

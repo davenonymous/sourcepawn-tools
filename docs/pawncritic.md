@@ -712,6 +712,8 @@ A theme is a tag of a policy. Themes group policies across categories, and a run
 | `layout` | indentation, braces, line length, whitespace |
 | `tidy` | what pawntidy changes. Leave them out with `--theme '!tidy'` where pawntidy runs. |
 | `naming` | names of variables and functions |
+| `security` | code that endangers the server, its files or its players, by mistake or on purpose |
+| `malicious` | code with no legitimate use in a plugin: backdoors, password theft, attacks on players' games, hidden text. `--theme malicious` vets a third-party plugin. |
 
 Custom policies bring their own themes, and `add_themes` in a [policy section](#policy-sections) adds themes to a
 policy. [`--list-themes`](#--list-themes) lists the themes of all policies.
@@ -1033,7 +1035,7 @@ file. Whether the failed policy runs on later files, and the `skipped: ...` mess
 
 ## Built-in policies
 
-pawncritic has 31 built-in policies: 29 written in Lua (in `crates/pawncritic/policies/`) and two native policies
+pawncritic has 47 built-in policies: 45 written in Lua (in `crates/pawncritic/policies/`) and two native policies
 written in Rust, `Core::RequireParsableCode` and `CodeLayout::RequireTidyCode`. [`--list`](#--list) marks those the
 current choice of policies runs.
 
@@ -1050,6 +1052,12 @@ current choice of policies runs.
 | `Complexity::ProhibitLongFiles` | 3 | `complexity`, `core`, `philosophy` | the file has too many lines |
 | `Complexity::ProhibitLongFunctions` | 3 | `complexity`, `core`, `philosophy` | the function has too many lines |
 | `Core::RequireParsableCode` | 5 | `bugs`, `core` | the parser cannot read this code |
+| `Malicious::ProhibitClientSlowhack` | 5 | `core`, `malicious`, `security` | the plugin runs a command on a player's game that changes or leaves it |
+| `Malicious::ProhibitDangerousDownloads` | 5 | `core`, `malicious`, `security` | the plugin makes players download a config file or a program |
+| `Malicious::ProhibitObfuscatedStrings` | 5 | `core`, `malicious`, `security` | text is hidden from the reader |
+| `Malicious::ProhibitPasswordConVars` | 5 | `core`, `malicious`, `security` | the code names the RCON password ConVar |
+| `Malicious::ProhibitSteamIdBackdoors` | 5 | `core`, `malicious`, `security` | a hard-coded SteamID in a function that grants admin rights |
+| `Malicious::ProhibitVguiCommandBypass` | 5 | `core`, `malicious`, `security` | a VGUI panel with a `cmd` key runs a command on the player's game |
 | `Modern::ProhibitCloseHandle` | 4 | `core`, `modern` | `CloseHandle()` is superseded by `delete` |
 | `Modern::ProhibitDeprecatedFunctions` | 4 | `bugs`, `core`, `modern` | SourceMod marks this function as deprecated |
 | `Modern::ProhibitFunctagAndFuncenum` | 4 | `core`, `modern` | `functag` and `funcenum` are obsolete; use `typedef` and `typeset` |
@@ -1068,6 +1076,16 @@ current choice of policies runs.
 | `Philosophy::ProhibitMeaninglessNames` | 2 | `core`, `naming`, `philosophy` | the name says nothing about its purpose |
 | `Philosophy::RequireBooleanPredicateNames` | 1 | `core`, `naming`, `philosophy` | a function returning bool should be named as a question |
 | `Philosophy::RequireEarlyExit` | 2 | `core`, `philosophy` | the rest of the body is wrapped in a condition; return or continue early instead |
+| `Security::ProhibitAbsolutePaths` | 4 | `core`, `security` | an absolute path reaches outside the game directory |
+| `Security::ProhibitCodeFileWrites` | 4 | `core`, `security` | the plugin writes, deletes or renames a file of code |
+| `Security::ProhibitCommandInjection` | 5 | `core`, `security` | client input goes into a command |
+| `Security::ProhibitHardcodedEndpoints` | 4 | `core`, `security` | the plugin connects to an address written into the code |
+| `Security::ProhibitNonLiteralFormat` | 4 | `bugs`, `core`, `security` | the format is a variable; a `%` in it is read as a format specifier |
+| `Security::ProhibitPathTraversal` | 5 | `core`, `security` | the path climbs out of the game directory |
+| `Security::ProhibitSecretFileAccess` | 4 | `core`, `security` | the plugin opens a file with credentials |
+| `Security::ProhibitServerControlCommands` | 4 | `core`, `security` | the plugin loads code or stops the server with a server command |
+| `Security::ProhibitShellExecution` | 4 | `core`, `security` | the plugin runs a program on the server's machine |
+| `Security::ProhibitSqlInjection` | 5 | `bugs`, `core`, `security` | client input goes into an SQL query unescaped |
 | `Variables::RequireLateDeclarations` | 3 | `core`, `philosophy`, `variables` | the variable is declared long before it is used |
 | `Variables::RequireNarrowDeclarations` | 3 | `core`, `philosophy`, `variables` | the variable is used only inside a nested block |
 
@@ -1211,6 +1229,115 @@ not count.
   `split it into smaller functions that each do one thing`.
 - Options:
   - `max_lines` (integer, default `50`): the most code lines a function may have.
+
+### Malicious
+
+The `Malicious::` policies report code that has no legitimate use in a plugin. They have severity 5 and the themes
+`core`, `malicious` and `security`; `--theme malicious` runs exactly them, to vet a plugin from a third party.
+
+These policies read the code as written (see [ADR 0002](adr/0002-the-source-is-parsed-as-written.md)), so they are
+heuristics, not a proof: a clean run does not make a plugin safe. They see:
+
+- literal text only: a string literal, a `...` concatenation of string literals, or the template literal of the
+  `Format()`, `FormatEx()`, `VFormat()`, `strcopy()`, `StrCat()` or `BuildPath()` call that fills the buffer passed,
+  earlier in the same function ("the template of the buffer passed" below). Text built any other way, read from a
+  file or put together in another function is invisible to them;
+- client input only within one function, as described under
+  [`Security::ProhibitCommandInjection`](#securityprohibitcommandinjection);
+- no included files and no macros.
+
+Options that name functions take entries of the form `Name:N` or `Name:N,M`, with the positions of the arguments the
+policy looks at, counted from 1. A method is named without its methodmap (`SetString:1` for `kv.SetString(...)`); a
+constructor by its methodmap (`HTTPClient:1` for `new HTTPClient(...)`). A malformed entry stops the policy on every
+file with ``option `NAME`: `ENTRY` is not of the form Name:N``.
+
+#### `Malicious::ProhibitClientSlowhack`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports a literal command passed to a function of `functions` (directly or as the template of the buffer passed)
+  in which a command starts with a word in `commands`, ignoring case. Commands are separated by `;` and line breaks.
+  `ClientCommand()` runs the command in the player's own game: binds, configs, download settings or a `connect` there
+  harm the player beyond the server. `FakeClientCommand()` runs on the server and is not checked.
+- Message: ``FUNCTION() runs `WORD` on the player's game``. Hint: none.
+- Options:
+  - `functions` (list, default `["ClientCommand:2"]`): functions that run a command on a client, with the command's
+    position.
+  - `commands` (list, default `["bind", "unbind", "unbindall", "alias", "connect", "redirect", "writecfg", "exec",
+    "cl_downloadfilter", "cl_allowupload", "cl_allowdownload", "motdfile", "motd_write", "con_logfile",
+    "host_writeconfig", "quit", "exit"]`): client commands a plugin must not run, in lower case.
+
+#### `Malicious::ProhibitDangerousDownloads`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports a literal path passed to a function of `functions` (directly or as the template of the buffer passed)
+  that ends in one of `extensions` or starts with one of `directories`, ignoring case, after `\` became `/` and a
+  leading `./` was dropped. A downloaded config can replace the player's own and run commands on their game.
+- Message: ``players would download a `EXTENSION` file`` or ``players would download a file in `DIRECTORY` ``.
+  Hint: none.
+- Options:
+  - `functions` (list, default `["AddFileToDownloadsTable:1"]`): functions that add a download, with the path's
+    position.
+  - `extensions` (list, default `[".cfg", ".exe", ".dll", ".so", ".dylib", ".bat", ".cmd", ".com", ".vbs", ".ps1",
+    ".sh", ".scr", ".jar", ".lnk"]`): file name endings never downloaded.
+  - `directories` (list, default `["cfg/", "bin/"]`): directories of the game no download goes to.
+
+#### `Malicious::ProhibitObfuscatedStrings`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports text written so that a reader cannot see it:
+  - the initializer of a `char` (or old `String:`) array that holds at least `min_length` items, all integer literals
+    of printable ASCII characters (32 to 126), such as `char cmd[] = { 114, 99, 111, ... }`. Arrays of other types,
+    such as lookup tables of `int`, are not checked;
+  - a string literal with at least `min_escapes` escapes (`\xNN`, `\NNN`) of printable ASCII characters. Escapes of
+    control characters, such as the color codes `\x01` to `\x08`, do not count;
+  - a string literal of at least `min_blob_length` characters that are all letters, digits, `+` and `/`, optionally
+    followed by `=` (base64 or hex).
+- Message: `the text is written as character codes`, `printable characters are written as escapes` or `a long base64
+  or hex string hides what it holds`. Hint: `write it as a string: "TEXT"` or `write them plainly: "TEXT"` with the
+  decoded text; none for a blob.
+- Options:
+  - `min_length` (integer, default `8`): the printable integers that make a char array text.
+  - `min_escapes` (integer, default `4`): the escapes of printable characters that make a string hidden.
+  - `min_blob_length` (integer, default `64`): the length from which a base64 or hex string counts as a blob.
+
+#### `Malicious::ProhibitPasswordConVars`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports a string literal, or a `...` concatenation of string literals, one of whose words (runs of letters, digits
+  and `_`) is a ConVar of `convars`, ignoring case. Whoever knows the RCON password controls the server; a plugin
+  never needs it. `sv_password` is not in the default list: match plugins set it on purpose.
+- Message: ``the code names the ConVar `NAME` ``. Hint: `a plugin never needs the RCON password; remove this`.
+- Options:
+  - `convars` (list, default `["rcon_password", "sv_rcon_*"]`): ConVar names; a trailing `*` matches any rest.
+
+#### `Malicious::ProhibitSteamIdBackdoors`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports each string literal that is a SteamID (`STEAM_X:Y:Z`, `[U:1:N]` or a 64-bit SteamID starting with
+  `7656119`) in a function that also calls one of `grant_functions`. A function that grants admin rights to a
+  SteamID written into the code keeps its author in control of every server that runs it. A SteamID in a function
+  that grants nothing is not reported.
+- Message: the summary. Hint: `grant admin rights in the server's admin configuration`.
+- Options:
+  - `grant_functions` (list, default `["SetUserFlagBits", "AddUserFlags", "SetUserAdmin", "CreateAdmin",
+    "SetAdminFlag", "SetFlag", "AdminInheritGroup", "InheritGroup", "BindAdminIdentity", "BindIdentity",
+    "SetAdmGroupAddFlag", "SetAdmGroupImmunityLevel", "SetAdminImmunityLevel", "SetImmunityLevel"]`): functions and
+    methods that grant admin rights, by name.
+
+#### `Malicious::ProhibitVguiCommandBypass`
+
+- Severity: 5. Themes: `core`, `malicious`, `security`.
+- Reports a string literal `cmd` that is an argument of a call in a function that shows a VGUI panel (calls one of
+  `panel_functions` or has the string literal `VGUIMenu`, the user message), unless its value is an integer literal,
+  a name of capital letters, digits and `_` (a macro or enum constant), a string of digits or one of
+  `allowed_commands`. The value is the next argument of the same call
+  (`kv.SetString("cmd", VALUE)`), or else the last argument of the next call in the function
+  (`BfWriteString(bf, "cmd"); BfWriteString(bf, VALUE);`); a value that is no literal is reported. The game runs the
+  `cmd` of a panel when it closes, which once let plugins run commands that `ClientCommand()` may not.
+- Message: the summary. Hint: `leave the cmd key out or use closed_htmlpage`.
+- Options:
+  - `panel_functions` (list, default `["ShowVGUIPanel"]`): functions that show a VGUI panel.
+  - `allowed_commands` (list, default `["closed_htmlpage"]`): harmless values of the key.
 
 ### Modern
 
@@ -1419,6 +1546,179 @@ not count.
   with `` `continue` `` instead of `` `return` `` in a loop.
 - Options:
   - `min_statements` (integer, default `3`): the fewest statements in the wrapping `if` that are reported.
+
+### Security
+
+The `Security::` policies report code that puts the server, its files or its players at risk, by mistake or on
+purpose. Some of it has legitimate uses, such as a plugin manager that loads plugins; silence those with a
+[`no critic` annotation](#annotations).
+
+What these policies see, and what the options that name functions take, is described under [Malicious](#malicious).
+
+#### `Security::ProhibitAbsolutePaths`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports a literal path that starts with `/`, `\` or a drive letter (`C:`) and is passed to a function of
+  `file_functions`, directly or as the template of the buffer passed (not through `BuildPath()`, which always starts
+  in the SourceMod directory). File functions take paths relative to the game directory.
+- Message: ``the absolute path `PATH` reaches outside the game directory``. Hint: `use a path relative to the game
+  directory, or BuildPath(Path_SM, ...)`.
+- Options:
+  - `file_functions` (list, default `["OpenFile:1", "DeleteFile:1", "RenameFile:1,2", "FileExists:1",
+    "DirExists:1", "CreateDirectory:1", "RemoveDir:1", "OpenDirectory:1", "FileSize:1", "GetFileTime:1",
+    "SetFilePermissions:1", "FileToKeyValues:2", "KeyValuesToFile:2", "ImportFromFile:1", "ExportToFile:1",
+    "LogToFile:1", "LogToFileEx:1", "SteamWorks_WriteHTTPResponseBodyToFile:2", "SetOutputFile:1"]`): functions that
+    take a path, with the positions of their paths.
+
+#### `Security::ProhibitCodeFileWrites`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports a literal path that reaches a function of `write_functions` (directly or as the template of the buffer
+  passed) and is a file of code: after `..` and `.` parts are resolved and `\` became `/`, it ends in one of
+  `code_extensions` or lies in one of `code_directories`, ignoring case. Paths start in the game directory, those of
+  `BuildPath(Path_SM, ...)` in `addons/sourcemod/`. `OpenFile()` counts only when its mode is a literal with `w`, `a`
+  or `+`, or no literal. Writing, deleting or renaming plugins, extensions or Metamod:Source plugins installs or
+  removes code behind the owner's back.
+- Message: ``FUNCTION() changes the code file `PATH` ``. Hint: none.
+- Options:
+  - `file_functions` (list, default as for `Security::ProhibitAbsolutePaths`): functions that take a path.
+  - `write_functions` (list, default `["OpenFile:1", "DeleteFile:1", "RenameFile:1,2", "CreateDirectory:1",
+    "RemoveDir:1", "KeyValuesToFile:2", "ExportToFile:1", "LogToFile:1", "LogToFileEx:1",
+    "SteamWorks_WriteHTTPResponseBodyToFile:2", "SetOutputFile:1"]`): those that write, delete or rename.
+  - `code_extensions` (list, default `[".smx", ".so", ".dll", ".dylib", ".vdf"]`): file name endings of code.
+  - `code_directories` (list, default `["addons/sourcemod/plugins/", "addons/sourcemod/extensions/",
+    "addons/sourcemod/bin/", "addons/metamod/", "bin/"]`): directories of code below the game directory.
+
+#### `Security::ProhibitCommandInjection`
+
+- Severity: 5. Themes: `core`, `security`.
+- Reports a variable holding client input that is an argument of a function of `functions`, at the command's
+  position or after it. A player's name or message may hold `;` and further commands, which the server then runs.
+- Client input is tracked within one function, in the order of the code (loops are not followed back): a plain
+  variable holds client input once a call of `sources` filled it (its buffer argument), when it is a parameter of a
+  function named in `forwards` at the given position, or once a call of `propagators` wrote into it while one of its
+  other arguments held client input. Array elements, fields and return values are not tracked, and no function
+  removes client input from a variable.
+- Message: ``` `NAME` holds client input and goes into FUNCTION() ```. Hint: ``refer to players by `#userid`; do not
+  pass free text``.
+- Options:
+  - `functions` (list, default `["ServerCommand:1", "ServerCommandEx:3", "InsertServerCommand:1",
+    "ClientCommand:2", "FakeClientCommand:2", "FakeClientCommandEx:2"]`): functions that run a command, with the
+    command's position.
+  - `sources` (list, default `["GetCmdArg:2", "GetCmdArgString:1", "GetClientName:2", "GetClientInfo:3",
+    "GetEventString:3", "GetClientCookie:3"]`): calls (not methods) that fill a buffer with client input, with the
+    buffer's position.
+  - `forwards` (list, default `["OnClientSayCommand:3", "OnClientSayCommand_Post:3"]`): functions whose parameters
+    hold client input, with their positions.
+  - `propagators` (list, default `["Format:1", "FormatEx:1", "VFormat:1", "strcopy:1", "StrCat:1",
+    "BuildPath:2"]`): calls (not methods) that write their other arguments into a buffer, with its position.
+
+#### `Security::ProhibitHardcodedEndpoints`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports a literal address passed to a function or constructor of `natives`, directly or as the template of the
+  buffer passed, unless it is empty or starts with `%` (a placeholder, such as a host read from a ConVar). Host names,
+  IP addresses and URLs alike: the owner cannot see or change where the data goes. Auto-updaters
+  (`Updater_AddPlugin()`) are not in the default list.
+- Message: ``FUNCTION() connects to `ADDRESS`, written into the code``. Hint: `read the address from a ConVar or a
+  config file`.
+- Options:
+  - `natives` (list, default `["SocketConnect:5", "SocketSendTo:4", "SteamWorks_CreateHTTPRequest:2",
+    "System2HTTPRequest:2", "System2FTPRequest:2", "System2_GetPage:2", "System2_DownloadFile:2", "HTTPClient:1",
+    "HTTPRequest:1"]`): functions and constructors that take an address, with its position.
+
+#### `Security::ProhibitNonLiteralFormat`
+
+- Severity: 4. Themes: `bugs`, `core`, `security`.
+- Reports the format argument of a call of `functions` when no argument follows it and it is not fixed text. Fixed
+  text is a string literal, a name of capital letters, digits and `_` (most likely a macro of a string), or a `...`
+  concatenation of those. A format function reads every `%` as a specifier, so a player's name or message as the
+  format makes the call fail or print what it should not.
+- Message: ``the format of FUNCTION() is `TEXT`, not fixed text``. Hint: `pass it as an argument: "%s", TEXT`.
+- Options:
+  - `functions` (list): format functions with the format's position. The default holds SourceMod's
+    (`PrintToChat:2`, `PrintToChatAll:1`, `PrintCenterText:2`, `PrintCenterTextAll:1`, `PrintHintText:2`,
+    `PrintHintTextToAll:1`, `PrintToConsole:2`, `PrintToConsoleAll:1`, `PrintToServer:1`, `ReplyToCommand:2`,
+    `ShowActivity:2`, `ShowActivity2:3`, `ShowActivityEx:3`, `LogMessage:1`, `LogError:1`, `LogAction:3`,
+    `LogToFile:2`, `LogToFileEx:2`, `LogToGame:1`, `Format:3`, `FormatEx:3`, `ThrowError:1`, `ThrowNativeError:2`,
+    `SetFailState:1`, `ServerCommand:1`, `ServerCommandEx:3`, `InsertServerCommand:1`, `ClientCommand:2`,
+    `FakeClientCommand:2`, `FakeClientCommandEx:2`, `KickClient:2`, `KickClientEx:2`, `ShowHudText:3`,
+    `ShowSyncHudText:3`), those of the color libraries morecolors, colors and multicolors (`CPrintToChat:2`,
+    `CPrintToChatAll:1`, `CPrintToChatEx:3`, `CPrintToChatAllEx:2`, `CReplyToCommand:2`, `CShowActivity:2`,
+    `CShowActivity2:3`, `CShowActivityEx:3`) and those of `etf2l.inc` (`ETF2L_PrintToChat:2`,
+    `ETF2L_PrintToChatEx:3`, `ETF2L_PrintToChatAll:1`, `ETF2L_PrintToChatAllEx:2`, `ETF2L_PrintToTeam:2`,
+    `ETF2L_PrintToTeamEx:3`, `ETF2L_PrintToAdmins:2`, `ETF2L_PrintToAdminsEx:3`, `ETF2L_ShowActivity:2`,
+    `ETF2L_PrintToServer:1`, `ETF2L_PrintToConsole:2`, `ETF2L_Reply:2`, `ETF2L_ReplyEx:3`, `ETF2L_LogDebug:1`,
+    `ETF2L_LogInfo:1`, `ETF2L_LogWarning:1`, `ETF2L_LogError:1`).
+
+#### `Security::ProhibitPathTraversal`
+
+- Severity: 5. Themes: `core`, `security`.
+- Reports a literal path whose `..` parts climb above the game directory: one passed to a function of
+  `file_functions` (directly or as the template of the buffer passed), and the path of every `BuildPath()`. Paths
+  start in the game directory, those of `BuildPath(Path_SM, ...)` in `addons/sourcemod/`, so
+  `BuildPath(Path_SM, path, sizeof(path), "../../cfg/x.cfg")` stays inside and `"../../../x"` does not. `/` and `\`
+  both separate parts. A template that starts with `%`, and `BuildPath()` with another path type, start in an
+  unknown place and are not checked; absolute paths are left to `Security::ProhibitAbsolutePaths`.
+- Message: ``the path `PATH` climbs out of the game directory``. Hint: none.
+- Options:
+  - `file_functions` (list, default as for `Security::ProhibitAbsolutePaths`): functions that take a path.
+
+#### `Security::ProhibitSecretFileAccess`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports a literal path passed to a function of `file_functions` (directly or as the template of the buffer
+  passed), or the path of a `BuildPath()`, whose last part is one of `secret_files`, ignoring case. These files hold
+  database passwords, admin rights and usually the RCON password; SourceMod's API gives a plugin what it needs.
+- Message: ``the plugin opens `NAME` ``. Hint: `use SourceMod's API (SQL_Connect, the admin functions) instead of the
+  file`.
+- Options:
+  - `file_functions` (list, default as for `Security::ProhibitAbsolutePaths`): functions that take a path.
+  - `secret_files` (list, default `["databases.cfg", "admins.cfg", "admins_simple.ini", "admin_groups.cfg",
+    "admin_overrides.cfg", "core.cfg", "server.cfg"]`): file names that hold credentials or admin rights.
+
+#### `Security::ProhibitServerControlCommands`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports a literal command passed to a function of `functions` (directly or as the template of the buffer passed)
+  in which a command, separated by `;` or a line break, is one of `commands` or starts with one followed by a space,
+  ignoring case and counting any run of whitespace as one space. Loading and unloading code, RCON and shutting the
+  server down are the owner's decisions.
+- Message: ``FUNCTION() runs `COMMAND` ``. Hint: none.
+- Options:
+  - `functions` (list, default `["ServerCommand:1", "ServerCommandEx:3", "InsertServerCommand:1"]`): functions that
+    run a server command, with the command's position.
+  - `commands` (list, default `["sm plugins load", "sm plugins unload", "sm plugins unload_all", "sm plugins
+    reload", "sm plugins refresh", "sm exts load", "sm exts unload", "sm exts reload", "meta load", "meta unload",
+    "plugin_load", "plugin_unload", "rcon", "sm_rcon", "quit", "exit", "_restart", "killserver"]`): commands with
+    their first words.
+
+#### `Security::ProhibitShellExecution`
+
+- Severity: 4. Themes: `core`, `security`.
+- Reports every call of a function of `functions` (not a method of the same name). Such a function runs any program
+  with the rights of the game server.
+- Message: `FUNCTION() runs a program on the server's machine`. Hint: none.
+- Options:
+  - `functions` (list, default `["System2_Execute", "System2_ExecuteThreaded", "System2_ExecuteFormatted",
+    "System2_ExecuteFormattedThreaded"]`): functions that run a program, by name.
+
+#### `Security::ProhibitSqlInjection`
+
+- Severity: 5. Themes: `bugs`, `core`, `security`.
+- Reports a variable holding client input that a call (not a method) of `format_functions` formats with `%s` into a
+  literal template with one of the words SELECT, INSERT, UPDATE, DELETE or REPLACE, ignoring case. Arguments are
+  paired with the template's conversions in order; `%T` takes two arguments, `%%` none. Client input is tracked as
+  for `Security::ProhibitCommandInjection`, except that a buffer one of `sanitizers` writes no longer holds it.
+  `Database.Format()` and `SQL_FormatQuery()`, whose `%s` escapes, are not format functions here.
+- Message: ``` `NAME` holds client input and goes into a query unescaped ```. Hint: `format the query with
+  Database.Format()`.
+- Options:
+  - `format_functions` (list, default `["Format:3", "FormatEx:3"]`): functions that format text, with the template's
+    position.
+  - `sources`, `forwards`, `propagators` (lists, defaults as for `Security::ProhibitCommandInjection`).
+  - `sanitizers` (list, default `["SQL_EscapeString:3", "Escape:2"]`): calls and methods that write escaped text into
+    a buffer, with its position.
 
 ### Variables
 

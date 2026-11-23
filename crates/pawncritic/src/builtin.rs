@@ -17,6 +17,12 @@ pub const SOURCES: &[(&str, &str)] = &[
     ("CodeLayout/RequireSameLineBraces.lua", include_str!("../policies/CodeLayout/RequireSameLineBraces.lua")),
     ("Complexity/ProhibitLongFiles.lua", include_str!("../policies/Complexity/ProhibitLongFiles.lua")),
     ("Complexity/ProhibitLongFunctions.lua", include_str!("../policies/Complexity/ProhibitLongFunctions.lua")),
+    ("Malicious/ProhibitClientSlowhack.lua", include_str!("../policies/Malicious/ProhibitClientSlowhack.lua")),
+    ("Malicious/ProhibitDangerousDownloads.lua", include_str!("../policies/Malicious/ProhibitDangerousDownloads.lua")),
+    ("Malicious/ProhibitObfuscatedStrings.lua", include_str!("../policies/Malicious/ProhibitObfuscatedStrings.lua")),
+    ("Malicious/ProhibitPasswordConVars.lua", include_str!("../policies/Malicious/ProhibitPasswordConVars.lua")),
+    ("Malicious/ProhibitSteamIdBackdoors.lua", include_str!("../policies/Malicious/ProhibitSteamIdBackdoors.lua")),
+    ("Malicious/ProhibitVguiCommandBypass.lua", include_str!("../policies/Malicious/ProhibitVguiCommandBypass.lua")),
     ("Modern/ProhibitCloseHandle.lua", include_str!("../policies/Modern/ProhibitCloseHandle.lua")),
     ("Modern/ProhibitDeprecatedFunctions.lua", include_str!("../policies/Modern/ProhibitDeprecatedFunctions.lua")),
     ("Modern/ProhibitFunctagAndFuncenum.lua", include_str!("../policies/Modern/ProhibitFunctagAndFuncenum.lua")),
@@ -44,6 +50,19 @@ pub const SOURCES: &[(&str, &str)] = &[
         include_str!("../policies/Philosophy/RequireBooleanPredicateNames.lua"),
     ),
     ("Philosophy/RequireEarlyExit.lua", include_str!("../policies/Philosophy/RequireEarlyExit.lua")),
+    ("Security/ProhibitAbsolutePaths.lua", include_str!("../policies/Security/ProhibitAbsolutePaths.lua")),
+    ("Security/ProhibitCodeFileWrites.lua", include_str!("../policies/Security/ProhibitCodeFileWrites.lua")),
+    ("Security/ProhibitCommandInjection.lua", include_str!("../policies/Security/ProhibitCommandInjection.lua")),
+    ("Security/ProhibitHardcodedEndpoints.lua", include_str!("../policies/Security/ProhibitHardcodedEndpoints.lua")),
+    ("Security/ProhibitNonLiteralFormat.lua", include_str!("../policies/Security/ProhibitNonLiteralFormat.lua")),
+    ("Security/ProhibitPathTraversal.lua", include_str!("../policies/Security/ProhibitPathTraversal.lua")),
+    ("Security/ProhibitSecretFileAccess.lua", include_str!("../policies/Security/ProhibitSecretFileAccess.lua")),
+    (
+        "Security/ProhibitServerControlCommands.lua",
+        include_str!("../policies/Security/ProhibitServerControlCommands.lua"),
+    ),
+    ("Security/ProhibitShellExecution.lua", include_str!("../policies/Security/ProhibitShellExecution.lua")),
+    ("Security/ProhibitSqlInjection.lua", include_str!("../policies/Security/ProhibitSqlInjection.lua")),
     ("Variables/RequireLateDeclarations.lua", include_str!("../policies/Variables/RequireLateDeclarations.lua")),
     ("Variables/RequireNarrowDeclarations.lua", include_str!("../policies/Variables/RequireNarrowDeclarations.lua")),
 ];
@@ -51,10 +70,13 @@ pub const SOURCES: &[(&str, &str)] = &[
 /// Every built-in library: the name `pawn.library` knows it by, and its
 /// code, in `policies/lib/<name>.lua`.
 pub const LIBRARIES: &[(&str, &str)] = &[
+    ("calls", include_str!("../policies/lib/calls.lua")),
     ("declarations", include_str!("../policies/lib/declarations.lua")),
     ("functions", include_str!("../policies/lib/functions.lua")),
     ("lines", include_str!("../policies/lib/lines.lua")),
+    ("paths", include_str!("../policies/lib/paths.lua")),
     ("tags", include_str!("../policies/lib/tags.lua")),
+    ("taint", include_str!("../policies/lib/taint.lua")),
 ];
 
 /// The directory below `policies/` that holds the libraries.
