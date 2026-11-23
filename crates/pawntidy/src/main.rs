@@ -30,9 +30,10 @@ enum OutputFormat {
 
 /// A formatter for SourcePawn, in the spirit of perltidy.
 ///
-/// Indents with tabs (four columns wide), aligns continued lines with spaces after the tabs, puts
-/// opening braces at the end of their line, wraps every body of a condition or loop in braces and
-/// breaks lines longer than the limit (120 columns by default). A .pawntidy.toml sets the rest.
+/// Indents with tabs (four columns wide) or, as a .pawntidy.toml chooses, spaces, aligns continued
+/// lines with spaces after the indentation, puts opening braces at the end of their line, wraps
+/// every body of a condition or loop in braces and breaks lines longer than the limit (120 columns
+/// by default). A .pawntidy.toml sets the rest.
 ///
 /// Without --write, --check or --diff the formatted file is printed. Exit status: 0 on success,
 /// 1 when --check or --diff found files that would change, 2 on errors.

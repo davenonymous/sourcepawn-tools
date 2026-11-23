@@ -360,7 +360,7 @@ The step log of a run on `tests/action/dirty` with `tidy: true`, with the tools 
 
 ```text
 Using sourcepawn-tools 0.1.0 from the tool cache
-::warning file=tests/action/dirty/dirty.sp,line=9,col=1,endLine=9,endColumn=5,title=CodeLayout%3A%3ARequireTabIndentation::indentation with spaces; indent with tabs
+::warning file=tests/action/dirty/dirty.sp,line=9,col=1,endLine=9,endColumn=5,title=CodeLayout%3A%3AProhibitMixedIndentation::mixed indentation; 1 line is not indented with tabs
 ::warning file=tests/action/dirty/dirty.sp,line=9,col=27,endLine=9,endColumn=49,title=CodeLayout%3A%3ARequireBracedBlocks::the body of `if` is not in braces
 ::warning file=tests/action/dirty/dirty.sp,line=9,col=27,endLine=9,endColumn=48,title=Modern%3A%3AProhibitCloseHandle::`CloseHandle()` is superseded by `delete`
 would reformat tests/action/dirty/dirty.sp
@@ -443,18 +443,18 @@ sourcepawn-tools 0.1.0
 
 | Severity | Violations |
 |---:|---:|
-| 4 | 1 |
-| 3 | 2 |
+| 4 | 2 |
+| 3 | 1 |
 
 | Policy | Violations |
 |---|---:|
+| `CodeLayout::ProhibitMixedIndentation` | 1 |
 | `CodeLayout::RequireBracedBlocks` | 1 |
-| `CodeLayout::RequireTabIndentation` | 1 |
 | `Modern::ProhibitCloseHandle` | 1 |
 
 | Location | Severity | Policy | Message |
 |---|---:|---|---|
-| `tests/action/dirty/dirty.sp:9:1` | 3 | `CodeLayout::RequireTabIndentation` | indentation with spaces; indent with tabs |
+| `tests/action/dirty/dirty.sp:9:1` | 4 | `CodeLayout::ProhibitMixedIndentation` | mixed indentation; 1 line is not indented with tabs |
 | `tests/action/dirty/dirty.sp:9:27` | 3 | `CodeLayout::RequireBracedBlocks` | the body of `if` is not in braces |
 | `tests/action/dirty/dirty.sp:9:27` | 4 | `Modern::ProhibitCloseHandle` | `CloseHandle()` is superseded by `delete` |
 

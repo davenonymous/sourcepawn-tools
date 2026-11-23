@@ -161,6 +161,11 @@ The default format, for reading at a terminal.
 
 ```text
 $ pawncritic --severity 4 scripting/example.sp
+scripting/example.sp:11:1: [4] mixed indentation; 1 line is not indented with tabs  CodeLayout::ProhibitMixedIndentation
+   11 |     g_hTimer = CreateTimer(1.0, Timer_Tick, _, TIMER_REPEAT);
+      | ^^^^
+      = hint: line 11 differs; run `pawntidy --write scripting/example.sp` with indent_style = "tabs" in .pawntidy.toml
+
 scripting/example.sp:16:18: [4] the loop stops before the last client; client indices run from 1 to MaxClients  Bugs::RequireInclusiveMaxClients
    16 |     for (int i = 1; i < MaxClients; i++) {
       |                     ^^^^^^^^^^^^^^
@@ -171,7 +176,7 @@ scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern
       |         ^^^^^^^^^^^^^^^^^^^^^
       = hint: delete g_hTimer;
 
-2 violations in 1 of 1 file (2 of severity 4).
+3 violations in 1 of 1 file (3 of severity 4).
 [exit status 1]
 ```
 
@@ -217,7 +222,9 @@ $ pawncritic --no-snippets scripting/example.sp
 scripting/example.sp:10:1: [3] the opening brace is not on the line of its statement  CodeLayout::RequireSameLineBraces
       = hint: move `{` up to line 9
 
-scripting/example.sp:11:1: [3] indentation with spaces; indent with tabs  CodeLayout::RequireTabIndentation
+scripting/example.sp:11:1: [4] mixed indentation; 1 line is not indented with tabs  CodeLayout::ProhibitMixedIndentation
+      = hint: line 11 differs; run `pawntidy --write scripting/example.sp` with indent_style = "tabs" in .pawntidy.toml
+
 scripting/example.sp:15:1: [3] the opening brace is not on the line of its statement  CodeLayout::RequireSameLineBraces
       = hint: move `{` up to line 14
 
@@ -226,7 +233,7 @@ scripting/example.sp:15:1: [3] the opening brace is not on the line of its state
 scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern::ProhibitCloseHandle
       = hint: delete g_hTimer;
 
-7 violations in 1 of 1 file (2 of severity 4, 5 of severity 3).
+7 violations in 1 of 1 file (3 of severity 4, 4 of severity 3).
 [exit status 1]
 ```
 
@@ -246,13 +253,13 @@ scripting/example.sp:9:1: [1] pawntidy would change this file from line 9 on  Co
 
 Violations per policy:
       1  [4] Bugs::RequireInclusiveMaxClients
+      1  [4] CodeLayout::ProhibitMixedIndentation
       1  [4] Modern::ProhibitCloseHandle
       1  [3] CodeLayout::RequireBracedBlocks
       3  [3] CodeLayout::RequireSameLineBraces
-      1  [3] CodeLayout::RequireTabIndentation
       1  [1] CodeLayout::RequireTidyCode
 
-8 violations in 1 of 1 file (2 of severity 4, 5 of severity 3, 1 of severity 1).
+8 violations in 1 of 1 file (3 of severity 4, 4 of severity 3, 1 of severity 1).
 [exit status 1]
 ```
 
@@ -286,7 +293,7 @@ and the end position are not part of the format.
 ```text
 $ pawncritic --format gcc scripting/example.sp
 scripting/example.sp:10:1: warning: the opening brace is not on the line of its statement [CodeLayout::RequireSameLineBraces]
-scripting/example.sp:11:1: warning: indentation with spaces; indent with tabs [CodeLayout::RequireTabIndentation]
+scripting/example.sp:11:1: warning: mixed indentation; 1 line is not indented with tabs [CodeLayout::ProhibitMixedIndentation]
 scripting/example.sp:15:1: warning: the opening brace is not on the line of its statement [CodeLayout::RequireSameLineBraces]
 scripting/example.sp:16:18: warning: the loop stops before the last client; client indices run from 1 to MaxClients [Bugs::RequireInclusiveMaxClients]
 scripting/example.sp:17:26: warning: the body of `if` is not in braces [CodeLayout::RequireBracedBlocks]
@@ -532,7 +539,7 @@ $ pawncritic --format checkstyle scripting/example.sp
 <checkstyle version="4.3">
   <file name="scripting/example.sp">
     <error line="10" column="1" severity="warning" message="the opening brace is not on the line of its statement" source="pawncritic.CodeLayout.RequireSameLineBraces"/>
-    <error line="11" column="1" severity="warning" message="indentation with spaces; indent with tabs" source="pawncritic.CodeLayout.RequireTabIndentation"/>
+    <error line="11" column="1" severity="warning" message="mixed indentation; 1 line is not indented with tabs" source="pawncritic.CodeLayout.ProhibitMixedIndentation"/>
     <error line="15" column="1" severity="warning" message="the opening brace is not on the line of its statement" source="pawncritic.CodeLayout.RequireSameLineBraces"/>
     <error line="16" column="18" severity="warning" message="the loop stops before the last client; client indices run from 1 to MaxClients" source="pawncritic.Bugs.RequireInclusiveMaxClients"/>
     <error line="17" column="26" severity="warning" message="the body of `if` is not in braces" source="pawncritic.CodeLayout.RequireBracedBlocks"/>
@@ -562,7 +569,7 @@ file and lines it names. GitHub limits how many GitHub annotations of a step it 
 ```text
 $ pawncritic --format github scripting/example.sp
 ::warning file=scripting/example.sp,line=10,col=1,endLine=10,endColumn=2,title=CodeLayout%3A%3ARequireSameLineBraces::the opening brace is not on the line of its statement
-::warning file=scripting/example.sp,line=11,col=1,endLine=11,endColumn=5,title=CodeLayout%3A%3ARequireTabIndentation::indentation with spaces; indent with tabs
+::warning file=scripting/example.sp,line=11,col=1,endLine=11,endColumn=5,title=CodeLayout%3A%3AProhibitMixedIndentation::mixed indentation; 1 line is not indented with tabs
 ::warning file=scripting/example.sp,line=15,col=1,endLine=15,endColumn=2,title=CodeLayout%3A%3ARequireSameLineBraces::the opening brace is not on the line of its statement
 ::warning file=scripting/example.sp,line=16,col=18,endLine=16,endColumn=32,title=Bugs%3A%3ARequireInclusiveMaxClients::the loop stops before the last client; client indices run from 1 to MaxClients
 ::warning file=scripting/example.sp,line=17,col=26,endLine=17,endColumn=62,title=CodeLayout%3A%3ARequireBracedBlocks::the body of `if` is not in braces
@@ -596,7 +603,7 @@ violation, followed by a line break.
 ```text
 $ pawncritic --template '%f:%l:%c: [%s] %m (%p)' scripting/example.sp
 scripting/example.sp:10:1: [3] the opening brace is not on the line of its statement (CodeLayout::RequireSameLineBraces)
-scripting/example.sp:11:1: [3] indentation with spaces; indent with tabs (CodeLayout::RequireTabIndentation)
+scripting/example.sp:11:1: [4] mixed indentation; 1 line is not indented with tabs (CodeLayout::ProhibitMixedIndentation)
 scripting/example.sp:15:1: [3] the opening brace is not on the line of its statement (CodeLayout::RequireSameLineBraces)
 scripting/example.sp:16:18: [4] the loop stops before the last client; client indices run from 1 to MaxClients (Bugs::RequireInclusiveMaxClients)
 scripting/example.sp:17:26: [3] the body of `if` is not in braces (CodeLayout::RequireBracedBlocks)

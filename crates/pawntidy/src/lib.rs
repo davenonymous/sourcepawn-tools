@@ -145,7 +145,7 @@ fn format_unguarded(file: &ParsedFile, style: &Style) -> Result<Formatted, Forma
     let annotations = annotate::annotate(file);
     let items = layout::build_items(file, &annotations);
     let lines = layout::layout(file, &annotations, &items, style);
-    let mut text = if items.is_empty() { String::new() } else { layout::render(&items, &lines) };
+    let mut text = if items.is_empty() { String::new() } else { layout::render(&items, &lines, style.indent_unit()) };
     verify::verify(file, &items, &text).map_err(|mismatch| FormatError::Verification {
         path: file.source.name().display().to_string(),
         line: mismatch.line,

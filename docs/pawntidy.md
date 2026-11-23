@@ -1,7 +1,7 @@
 # pawntidy
 
-`pawntidy` formats SourcePawn files, as perltidy does for Perl. It gives every file the same layout (tabs for
-indentation, opening braces on the line of their statement, braces around every body, lines wrapped at a limit) so
+`pawntidy` formats SourcePawn files, as perltidy does for Perl. It gives every file the same layout (tabs or, if
+configured, spaces for indentation, opening braces on the line of their statement, braces around every body, lines wrapped at a limit) so
 that reviews and diffs show changes to the code, not to its whitespace.
 
 pawntidy changes whitespace, adds braces around single-statement bodies and moves comments between a header and its
@@ -400,6 +400,8 @@ braces](#added-braces). The `CloseHandle()` call stays: the code is pawncritic's
 ```console
 $ pawntidy --print-style
 # the default style; no .pawntidy.toml applies
+indent_style = "tabs"
+indent_width = 4
 max_line_length = 120
 max_blank_lines = 1
 continuation = "align"
@@ -444,17 +446,22 @@ keys. The [examples](#examples) show the rules applied to a whole plugin.
 
 ### Indentation and alignment
 
-- Every line is indented with one tab per block level. For measuring line widths a tab is four columns wide.
+- Every line is indented with one level per block level. A level is one tab with `indent_style = "tabs"` (the
+  default) and `indent_width` spaces with `indent_style = "spaces"`. For measuring line widths a tab is four columns
+  wide.
 - A continuation line (a line that carries on a statement or declaration begun on a line above it) is indented as
   follows:
   - Inside an open bracket (`(`, `[` or the `{` of an array literal) whose line goes on after it, with
-    `continuation = "align"`: the tabs of the bracket's line, then spaces up to the column after the bracket.
-  - Inside an open bracket that ends its line, or with `continuation = "indent"`: one tab deeper than the bracket's
+    `continuation = "align"`: the levels of the bracket's line, then spaces up to the column after the bracket.
+  - Inside an open bracket that ends its line, or with `continuation = "indent"`: one level deeper than the bracket's
     line.
   - A line that starts with the closing bracket: as deep as the bracket's line.
-  - Outside brackets: one tab deeper than the first line of the statement.
-- Spaces appear only after the tabs. At block level 0 an aligned line has no tabs, so it starts with spaces (see the
-  `OnPlayerRunCmd` example under [Wrapping](#wrapping-at-max_line_length)).
+  - Outside brackets: one level deeper than the first line of the statement.
+- With tabs, spaces appear only after the tabs. At block level 0 an aligned line has no tabs, so it starts with spaces
+  (see the `OnPlayerRunCmd` example under [Wrapping](#wrapping-at-max_line_length)). With spaces, the indentation holds
+  no tab at all.
+- The input's indentation does not matter: a file indented with tabs is indented with spaces under
+  `indent_style = "spaces"`, and the other way round.
 - Preprocessor directives start at column 0, at every block level.
 
 ```sourcepawn
@@ -884,16 +891,18 @@ values in TOML.
 
 | Key | Type | Default | Effect |
 |-----|------|---------|--------|
+| `indent_style` | `"tabs"` or `"spaces"` | `"tabs"` | What a line is indented with: one tab per level, or `indent_width` spaces per level. See [Indentation and alignment](#indentation-and-alignment). |
+| `indent_width` | integer, 2 to 8 | `4` | The spaces per level with `indent_style = "spaces"`. With `"tabs"` it has no effect, but a value outside 2 to 8 is still an error. |
 | `max_line_length` | integer, at least 40 | `120` | The widest a line may be, in columns, with a tab four columns wide. Longer lines are [wrapped](#wrapping-at-max_line_length) where the code allows it; trailing comments are only [aligned](#comments) within it. |
 | `max_blank_lines` | integer, at least 0 | `1` | The most [blank lines](#blank-lines) kept in a row. `0` removes all blank lines. |
-| `continuation` | `"align"` or `"indent"` | `"align"` | How a continuation line inside an open bracket is indented when the bracket's line goes on after it: `"align"` lines it up with spaces to the column after the bracket, `"indent"` indents it one tab deeper than the bracket's line. See [Indentation and alignment](#indentation-and-alignment). |
+| `continuation` | `"align"` or `"indent"` | `"align"` | How a continuation line inside an open bracket is indented when the bracket's line goes on after it: `"align"` lines it up with spaces to the column after the bracket, `"indent"` indents it one level deeper than the bracket's line. See [Indentation and alignment](#indentation-and-alignment). |
 | `cuddle_else` | boolean | `true` | `true` writes `} else {`; `false` puts `else` on a line of its own. |
 | `space_before_control_paren` | boolean | `true` | `true` writes `if (`, `for (`, `while (` and `switch (`; `false` writes `if(`, `for(`, `while(` and `switch(`. |
 | `align_trailing_comments` | boolean | `true` | Line up the trailing comments of consecutive lines with the same indentation. See [Comments](#comments). |
 | `line_ending` | `"auto"`, `"lf"` or `"crlf"` | `"auto"` | The line ending of the output. See [Line endings](#line-endings-the-byte-order-mark-and-the-end-of-the-file). |
 
-The indentation (one tab per level, four columns wide) cannot be configured: a key such as `use_tabs` or
-`indent_width` is an error, as is any other unknown key.
+The width of a tab (four columns) cannot be configured: a key such as `tab_width` is an error, as is any other unknown
+key.
 
 With this configuration file:
 
@@ -938,11 +947,12 @@ public void OnPluginStart() {
 
 ### Errors in the configuration file
 
-A configuration file is invalid when it is not valid TOML, has an unknown key, has a value of the wrong type or sets
-`max_line_length` below 40. The error starts with `pawntidy: error: PATH: `, where `PATH` is the configuration file:
+A configuration file is invalid when it is not valid TOML, has an unknown key, has a value of the wrong type, sets
+`max_line_length` below 40 or sets `indent_width` outside 2 to 8. The error starts with `pawntidy: error: PATH: `, where `PATH` is the configuration file:
 
 - For `max_line_length` below 40: `max_line_length is N, but must be at least 40` (see the
   [example](#error-examples)).
+- For `indent_width` outside 2 to 8: `indent_width is N, but must be between 2 and 8`.
 - For a file that cannot be read: `cannot read: MESSAGE`, such as
   `pawntidy: error: nope.toml: cannot read: No such file or directory (os error 2)` for `--config nope.toml`.
 - For everything else, the TOML reader's message over several lines: `TOML parse error at line L, column C`, the line of
@@ -960,7 +970,7 @@ pawntidy: error: /home/user/project/t1/.pawntidy.toml: TOML parse error at line 
 invalid value: integer `-1`, expected usize
 ```
 
-An unknown key has the same form; its explanation reads ``unknown field `KEY`, expected one of`` followed by the seven
+An unknown key has the same form; its explanation reads ``unknown field `KEY`, expected one of`` followed by the nine
 keys in backticks.
 
 An invalid configuration file stops the whole run before any file is formatted or written, with exit status 2: a file

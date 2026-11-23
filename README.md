@@ -7,8 +7,8 @@ perltidy, and a GitHub Action that runs them:
   to 1. Its 31 built-in policies (29 in Lua, 2 native: `Core::RequireParsableCode`, `CodeLayout::RequireTidyCode`)
   cover old syntax and API, likely bugs, early exits and naming, complexity, declarations and layout; see
   [Built-in policies](docs/pawncritic.md#built-in-policies). Custom policies are `.lua` files in a policy directory.
-- **`pawntidy`** formats `.sp` and `.inc` files: tabs for indentation, spaces only to align, opening braces on the
-  line of their statement, braces around the bodies of `if`, `else`, `for`, `while`, `do`, `case` and `default`
+- **`pawntidy`** formats `.sp` and `.inc` files: tabs (or, if configured, spaces) for indentation, spaces only to
+  align, opening braces on the line of their statement, braces around the bodies of `if`, `else`, `for`, `while`, `do`, `case` and `default`
   except where it sees that braces could change the program (such as a body with a directive in it or one that may
   be a macro), and lines wrapped at `max_line_length` (120 by default) where the code allows a break.
   It changes whitespace, adds braces and moves comments between a header and its `{` behind the brace, and checks

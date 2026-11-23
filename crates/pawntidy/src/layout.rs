@@ -10,10 +10,10 @@
 //! or an open bracket. Breaks are only ever added after such tokens, never
 //! before an operator, so a line break never ends a statement early.
 //!
-//! Every line is indented with one tab per block level. A line that
-//! continues a statement is indented one tab deeper, or, inside brackets,
-//! aligned with spaces after those tabs to the column after the open
-//! bracket.
+//! Every line is indented with one level per block level, a level being a
+//! tab or the style's spaces. A line that continues a statement is indented
+//! one level deeper, or, inside brackets, aligned with spaces after those
+//! levels to the column after the open bracket.
 
 use std::collections::HashMap;
 
@@ -21,7 +21,7 @@ use pawn_core::{ParsedFile, TokenKind, lexer};
 use unicode_width::UnicodeWidthChar;
 
 use crate::annotate::{Annotations, Flags, NO_UNIT, Role};
-use crate::config::{Continuation, Style, TAB_WIDTH};
+use crate::config::{Continuation, IndentUnit, Style, TAB_WIDTH};
 
 /// One token of the output: an input token or a brace pawntidy adds.
 #[derive(Debug, Clone)]
@@ -44,28 +44,28 @@ pub(crate) struct Item {
     pub(crate) line: usize,
 }
 
-/// The indentation of a line: tabs for the levels, then spaces to align.
+/// The indentation of a line: the levels, then spaces to align.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct Indent {
-    pub(crate) tabs: usize,
+    pub(crate) levels: usize,
     pub(crate) spaces: usize,
 }
 
 impl Indent {
-    fn new(tabs: usize) -> Indent {
-        Indent { tabs, spaces: 0 }
+    fn new(levels: usize) -> Indent {
+        Indent { levels, spaces: 0 }
     }
 
     fn deeper(self) -> Indent {
-        Indent { tabs: self.tabs + 1, spaces: self.spaces }
+        Indent { levels: self.levels + 1, spaces: self.spaces }
     }
 
-    pub(crate) fn width(self) -> usize {
-        self.tabs * TAB_WIDTH + self.spaces
+    pub(crate) fn width(self, unit: IndentUnit) -> usize {
+        self.levels * unit.width() + self.spaces
     }
 
-    pub(crate) fn render(self) -> String {
-        "\t".repeat(self.tabs) + &" ".repeat(self.spaces)
+    pub(crate) fn render(self, unit: IndentUnit) -> String {
+        unit.render(self.levels) + &" ".repeat(self.spaces)
     }
 }
 
@@ -196,6 +196,8 @@ struct Bracket {
 struct Engine<'a> {
     items: &'a [Item],
     style: &'a Style,
+    /// The style's indentation of one block level.
+    unit: IndentUnit,
     file: &'a ParsedFile,
     annotations: &'a Annotations,
     lines: Vec<Line>,
@@ -209,6 +211,7 @@ pub(crate) fn layout(file: &ParsedFile, annotations: &Annotations, items: &[Item
     let mut engine = Engine {
         items,
         style,
+        unit: style.indent_unit(),
         file,
         annotations,
         lines: Vec::new(),
@@ -485,7 +488,7 @@ impl Engine<'_> {
     fn flush(&mut self, mut items: Vec<(usize, usize)>, mut blank_lines: usize) {
         loop {
             let indent = self.indentation_for(items[0].0);
-            let width = indent.width() + self.content_width(&items, items.len());
+            let width = indent.width(self.unit) + self.content_width(&items, items.len());
             let break_after = if width > self.style.max_line_length { self.choose_break(&items, indent) } else { None };
             let Some(break_after) = break_after else {
                 self.commit(items, indent, blank_lines);
@@ -517,7 +520,7 @@ impl Engine<'_> {
             return None;
         }
         let mut depth = 0usize;
-        let mut width = indent.width();
+        let mut width = indent.width(self.unit);
         let mut candidates: Vec<BreakCandidate> = Vec::new();
         for position in 0..items.len().saturating_sub(1) {
             let item = &self.items[items[position].0];
@@ -581,7 +584,7 @@ impl Engine<'_> {
         if bracket.ends_line || self.style.continuation == Continuation::Indent {
             return bracket.indent.deeper();
         }
-        Indent { tabs: bracket.indent.tabs, spaces: bracket.indent.spaces + bracket.align_column }
+        Indent { levels: bracket.indent.levels, spaces: bracket.indent.spaces + bracket.align_column }
     }
 
     /// Adds a line and follows the brackets it opens and closes.
@@ -677,7 +680,8 @@ impl Engine<'_> {
         let fits = group.iter().all(|&line| {
             let LineContent::Items(items) = &self.lines[line].content else { return false };
             let comment = &self.items[items.last().expect("the line has a comment").0];
-            self.lines[line].indent.width() + column + display_width(&comment.text) <= self.style.max_line_length
+            self.lines[line].indent.width(self.unit) + column + display_width(&comment.text)
+                <= self.style.max_line_length
         });
         if !fits {
             return;
@@ -743,7 +747,7 @@ const LAYOUT_BLANKS: [char; 2] = [' ', '\t'];
 /// its last item, and the ends of the inner lines of block comments.
 /// Inside other tokens (a directive continued by a comment, a string) and
 /// in kept regions every byte stays.
-pub(crate) fn render(items: &[Item], lines: &[Line]) -> String {
+pub(crate) fn render(items: &[Item], lines: &[Line], unit: IndentUnit) -> String {
     let mut output = String::new();
     for (number, line) in lines.iter().enumerate() {
         if number > 0 {
@@ -755,10 +759,10 @@ pub(crate) fn render(items: &[Item], lines: &[Line]) -> String {
         match &line.content {
             LineContent::Verbatim(text) => output.push_str(text),
             LineContent::Items(line_items) => {
-                let mut rendered = line.indent.render();
+                let mut rendered = line.indent.render(unit);
                 for &(index, spaces) in line_items {
                     rendered.push_str(&" ".repeat(spaces));
-                    rendered.push_str(&item_text(&items[index], line.indent));
+                    rendered.push_str(&item_text(&items[index], line.indent.render(unit)));
                 }
                 output.push_str(rendered.trim_end_matches(LAYOUT_BLANKS));
             }
@@ -768,17 +772,16 @@ pub(crate) fn render(items: &[Item], lines: &[Line]) -> String {
     output
 }
 
-/// The text of an item in a line with `indent`. A block comment over
+/// The text of an item in a line indented with `new_indent`. A block comment over
 /// several lines moves its inner lines with the line it starts on: the
 /// indentation of that line in the input is replaced by the new one, and
 /// whatever whitespace follows it stays as it was. Inner lines indented
 /// less than the comment's line stay as they are. Every line of the
 /// comment but its last loses its trailing whitespace.
-fn item_text(item: &Item, indent: Indent) -> String {
+fn item_text(item: &Item, new_indent: String) -> String {
     if item.kind != TokenKind::BlockComment || !item.text.contains('\n') {
         return item.text.clone();
     }
-    let new_indent = indent.render();
     let mut lines = item.text.split('\n');
     let mut moved: Vec<String> = vec![lines.next().unwrap_or("").to_string()];
     for line in lines {
@@ -811,8 +814,10 @@ mod tests {
     }
 
     #[test]
-    fn indents_render_tabs_then_spaces() {
-        assert_eq!(Indent { tabs: 2, spaces: 3 }.render(), "\t\t   ");
-        assert_eq!(Indent { tabs: 2, spaces: 3 }.width(), 11);
+    fn indents_render_levels_then_spaces() {
+        assert_eq!(Indent { levels: 2, spaces: 3 }.render(IndentUnit::Tab), "\t\t   ");
+        assert_eq!(Indent { levels: 2, spaces: 3 }.width(IndentUnit::Tab), 11);
+        assert_eq!(Indent { levels: 2, spaces: 3 }.render(IndentUnit::Spaces(2)), "       ");
+        assert_eq!(Indent { levels: 2, spaces: 3 }.width(IndentUnit::Spaces(2)), 7);
     }
 }

@@ -1,0 +1,15 @@
+void Indented(int client)
+{
+	if (client)
+	{
+        Call(first,
+		     second);
+		int fits = FirstValueWithALongName + SecondValueWithALongName + ThirdValueWithALongName + FourthValue + FifthValu;
+		Call(
+			third);
+	}
+	/*
+	 * a block comment
+	 */
+    for (int i = 0; i < 3; i++) g(i);
+}

@@ -2,3 +2,5 @@
 /dist/
 /.claude/
 __pycache__/
+/CLAUDE.md
+/docs/adr

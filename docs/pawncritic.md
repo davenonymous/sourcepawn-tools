@@ -178,9 +178,10 @@ scripting/example.sp:10:1: [3] the opening brace is not on the line of its state
       | ^
       = hint: move `{` up to line 9
 
-scripting/example.sp:11:1: [3] indentation with spaces; indent with tabs  CodeLayout::RequireTabIndentation
+scripting/example.sp:11:1: [4] mixed indentation; 1 line is not indented with tabs  CodeLayout::ProhibitMixedIndentation
    11 |     g_hTimer = CreateTimer(1.0, Timer_Tick, _, TIMER_REPEAT);
       | ^^^^
+      = hint: line 11 differs; run `pawntidy --write scripting/example.sp` with indent_style = "tabs" in .pawntidy.toml
 
 scripting/example.sp:15:1: [3] the opening brace is not on the line of its statement  CodeLayout::RequireSameLineBraces
    15 | {
@@ -207,7 +208,7 @@ scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern
       |         ^^^^^^^^^^^^^^^^^^^^^
       = hint: delete g_hTimer;
 
-7 violations in 1 of 1 file (2 of severity 4, 5 of severity 3).
+7 violations in 1 of 1 file (3 of severity 4, 4 of severity 3).
 ```
 
 ### Raising the severity
@@ -216,6 +217,11 @@ scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern
 
 ```text
 $ pawncritic --severity 4 scripting/example.sp
+scripting/example.sp:11:1: [4] mixed indentation; 1 line is not indented with tabs  CodeLayout::ProhibitMixedIndentation
+   11 |     g_hTimer = CreateTimer(1.0, Timer_Tick, _, TIMER_REPEAT);
+      | ^^^^
+      = hint: line 11 differs; run `pawntidy --write scripting/example.sp` with indent_style = "tabs" in .pawntidy.toml
+
 scripting/example.sp:16:18: [4] the loop stops before the last client; client indices run from 1 to MaxClients  Bugs::RequireInclusiveMaxClients
    16 |     for (int i = 1; i < MaxClients; i++) {
       |                     ^^^^^^^^^^^^^^
@@ -226,7 +232,7 @@ scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern
       |         ^^^^^^^^^^^^^^^^^^^^^
       = hint: delete g_hTimer;
 
-2 violations in 1 of 1 file (2 of severity 4).
+3 violations in 1 of 1 file (3 of severity 4).
 ```
 
 ### Lowering the severity
@@ -255,13 +261,13 @@ scripting/example.sp:26:3: [4] `CloseHandle()` is superseded by `delete`  Modern
 
 Violations per policy:
       1  [4] Bugs::RequireInclusiveMaxClients
+      1  [4] CodeLayout::ProhibitMixedIndentation
       1  [4] Modern::ProhibitCloseHandle
       1  [3] CodeLayout::RequireBracedBlocks
       3  [3] CodeLayout::RequireSameLineBraces
-      1  [3] CodeLayout::RequireTabIndentation
       1  [1] CodeLayout::RequireTidyCode
 
-8 violations in 1 of 1 file (2 of severity 4, 5 of severity 3, 1 of severity 1).
+8 violations in 1 of 1 file (3 of severity 4, 4 of severity 3, 1 of severity 1).
 ```
 
 ### Choosing a theme
@@ -497,6 +503,7 @@ $ pawncritic --list
 * 4 Bugs::RequireInclusiveMaxClients          [bugs core]
 * 3 Bugs::RequireUserIdInTimers               [bugs core]
   2 CodeLayout::ProhibitLongLines             [core layout tidy]
+* 4 CodeLayout::ProhibitMixedIndentation      [core layout tidy]
   2 CodeLayout::ProhibitTrailingWhitespace    [core layout tidy]
 * 3 CodeLayout::RequireBracedBlocks           [core layout tidy]
 ...
@@ -940,7 +947,7 @@ A `no critic` annotation is a comment that silences policies where a violation i
 CloseHandle(g_Legacy); // no critic (ProhibitCloseHandle) - the API expects it closed here
 
 void Legacy() {
-	// no critic (Modern::, RequireTabIndentation)
+	// no critic (Modern::, ProhibitMixedIndentation)
 	...                // silenced from the line after the annotation
 	// use critic
 	...                // reported again from the line after `use critic`
@@ -1035,10 +1042,10 @@ current choice of policies runs.
 | `Bugs::RequireInclusiveMaxClients` | 4 | `bugs`, `core` | the loop stops before the last client; client indices run from 1 to MaxClients |
 | `Bugs::RequireUserIdInTimers` | 3 | `bugs`, `core` | a client index passed to a delayed callback; pass the user id instead |
 | `CodeLayout::ProhibitLongLines` | 2 | `core`, `layout`, `tidy` | the line is longer than the limit |
+| `CodeLayout::ProhibitMixedIndentation` | 4 | `core`, `layout`, `tidy` | mixed indentation; indent with either tabs or spaces, not both |
 | `CodeLayout::ProhibitTrailingWhitespace` | 2 | `core`, `layout`, `tidy` | the line ends in whitespace |
 | `CodeLayout::RequireBracedBlocks` | 3 | `core`, `layout`, `tidy` | the body of a condition or loop is not in braces |
 | `CodeLayout::RequireSameLineBraces` | 3 | `core`, `layout`, `tidy` | the opening brace is not on the line of its statement |
-| `CodeLayout::RequireTabIndentation` | 3 | `core`, `layout`, `tidy` | indentation with spaces; indent with tabs |
 | `CodeLayout::RequireTidyCode` | 1 | `core`, `layout`, `tidy` | the file is not formatted as pawntidy formats it |
 | `Complexity::ProhibitLongFiles` | 3 | `complexity`, `core`, `philosophy` | the file has too many lines |
 | `Complexity::ProhibitLongFunctions` | 3 | `complexity`, `core`, `philosophy` | the function has too many lines |
@@ -1121,6 +1128,29 @@ pawntidy fixes what these report (see [pawntidy.md](pawntidy.md)), except long l
   - `max_length` (integer, default `120`): the widest a line may be, in columns.
   - `tab_width` (integer, default `4`): how many columns a tab stop is wide. `0` counts as 1.
 
+#### `CodeLayout::ProhibitMixedIndentation`
+
+- Severity: 4. Themes: `core`, `layout`, `tidy`.
+- Checks that a file is indented one way: with tabs, or with spaces. The lines that count are those whose first token
+  starts a statement, a declaration, a member, an enum entry, a comment, a directive, a `}` or an `else`; with
+  `indent_style = "auto"`, the style most of them are indented with is the file's style (an indentation starting with
+  a tab counts for tabs, one starting with a space for spaces), tabs on a tie. A file where none of these lines is
+  indented is not checked.
+- In a file indented with tabs, a line breaks the style when its indentation has a space before a tab, or when it is
+  one of the lines that count and its indentation holds a space. Spaces after the tabs are allowed on a continuation
+  line, to align it with the line above. In a file indented with spaces, a line breaks the style when its indentation
+  holds a tab. Lines inside a token over several lines, such as the inner lines of a block comment, are not checked.
+- Reports once per file, at the first line that breaks the style. The width of the spaces is not checked;
+  `CodeLayout::RequireTidyCode` covers that.
+- Message: `mixed indentation; N lines are not indented with STYLE` (`1 line is` for one), where `STYLE` is `tabs` or
+  `spaces`. Hint: ``LINES differ; run `pawntidy --write PATH` with indent_style = "STYLE" in .pawntidy.toml``, where
+  `LINES` lists the lines that break the style (`line 9`, `lines 9 and 14`, `lines 9, 14 and 20`; after ten lines
+  `and N more`).
+- Options:
+  - `indent_style` (string, default `"auto"`): `"auto"` takes the style most lines use, `"tabs"` and `"spaces"`
+    require that style. Any other value makes the policy fail on every file with `the option indent_style is "VALUE",
+    but must be "auto", "tabs" or "spaces"`.
+
 #### `CodeLayout::ProhibitTrailingWhitespace`
 
 - Severity: 2. Themes: `core`, `layout`, `tidy`.
@@ -1145,15 +1175,6 @@ pawntidy fixes what these report (see [pawntidy.md](pawntidy.md)), except long l
   loop, `switch`, enum, enum struct, methodmap, methodmap property, struct, typeset or funcenum. A block that stands on
   its own as a statement, or at the top level, is not checked.
 - Message: the summary. Hint: `` move `{` up to line N ``.
-- Options: none.
-
-#### `CodeLayout::RequireTabIndentation`
-
-- Severity: 3. Themes: `core`, `layout`, `tidy`.
-- Reports the indentation of a line when it has a space before a tab, or when it holds a space and the line starts a
-  statement, a declaration, a member, an enum entry, a comment, a directive, a `}` or an `else`. Spaces after the tabs
-  are allowed on a continuation line, to align it with the line above.
-- Message: `a space before a tab in the indentation` for a space before a tab, the summary otherwise. Hint: none.
 - Options: none.
 
 #### `CodeLayout::RequireTidyCode`

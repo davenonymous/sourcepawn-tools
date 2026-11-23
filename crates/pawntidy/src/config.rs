@@ -3,8 +3,9 @@
 //! The style pawntidy formats with, and its configuration file,
 //! `.pawntidy.toml`. The nearest one above a file applies to it.
 //!
-//! The indentation is not configurable: one tab per level, tab stops four
-//! columns apart, spaces only after the tabs to align a continued line.
+//! The indentation is one tab per level or, with `indent_style = "spaces"`,
+//! `indent_width` spaces per level; spaces after it align a continued line.
+//! Tab stops are always four columns apart.
 
 use std::path::Path;
 
@@ -14,6 +15,44 @@ use serde::{Deserialize, Serialize};
 
 /// The width of a tab stop, for measuring lines and aligning.
 pub const TAB_WIDTH: usize = 4;
+
+/// What a line is indented with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum IndentStyle {
+    /// One tab per level.
+    Tabs,
+    /// `indent_width` spaces per level.
+    Spaces,
+}
+
+/// The indentation of one block level, as the style resolves it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IndentUnit {
+    Tab,
+    Spaces(usize),
+}
+
+impl IndentUnit {
+    /// The columns one level takes.
+    pub fn width(self) -> usize {
+        match self {
+            IndentUnit::Tab => TAB_WIDTH,
+            IndentUnit::Spaces(width) => width,
+        }
+    }
+
+    /// The text of `levels` levels.
+    pub fn render(self, levels: usize) -> String {
+        match self {
+            IndentUnit::Tab => "\t".repeat(levels),
+            IndentUnit::Spaces(width) => " ".repeat(levels * width),
+        }
+    }
+}
+
+/// The widths `indent_width` may take.
+const INDENT_WIDTHS: std::ops::RangeInclusive<usize> = 2..=8;
 
 /// How a line that continues a statement inside brackets is indented.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -49,6 +88,10 @@ impl LineEndingStyle {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, default)]
 pub struct Style {
+    pub indent_style: IndentStyle,
+    /// The spaces per level with `indent_style = "spaces"`; ignored with
+    /// tabs.
+    pub indent_width: usize,
     /// The widest a line may be, in columns, with tabs four wide. Longer
     /// lines are wrapped where the code allows it.
     pub max_line_length: usize,
@@ -67,6 +110,8 @@ pub struct Style {
 impl Default for Style {
     fn default() -> Style {
         Style {
+            indent_style: IndentStyle::Tabs,
+            indent_width: 4,
             max_line_length: 120,
             max_blank_lines: 1,
             continuation: Continuation::Align,
@@ -97,7 +142,23 @@ impl Style {
         if style.max_line_length < 40 {
             return Err(invalid(format!("max_line_length is {}, but must be at least 40", style.max_line_length)));
         }
+        if !INDENT_WIDTHS.contains(&style.indent_width) {
+            return Err(invalid(format!(
+                "indent_width is {}, but must be between {} and {}",
+                style.indent_width,
+                INDENT_WIDTHS.start(),
+                INDENT_WIDTHS.end()
+            )));
+        }
         Ok(style)
+    }
+
+    /// The indentation of one block level.
+    pub fn indent_unit(&self) -> IndentUnit {
+        match self.indent_style {
+            IndentStyle::Tabs => IndentUnit::Tab,
+            IndentStyle::Spaces => IndentUnit::Spaces(self.indent_width),
+        }
     }
 
     /// The style as the configuration file writes it, every key set.
@@ -122,9 +183,17 @@ mod tests {
     }
 
     #[test]
-    fn indentation_cannot_be_configured() {
-        let error = Style::parse("indent_width = 2", Path::new("x.toml")).unwrap_err().to_string();
-        assert!(error.contains("indent_width"), "{error}");
+    fn indentation_is_configured_by_style_and_width() {
+        let style = Style::parse("indent_style = \"spaces\"\nindent_width = 2", Path::new("x.toml")).unwrap();
+        assert_eq!(style.indent_unit(), IndentUnit::Spaces(2));
+        let style = Style::parse("indent_width = 8", Path::new("x.toml")).unwrap();
+        assert_eq!(style.indent_unit(), IndentUnit::Tab);
+        for wrong in ["indent_width = 1", "indent_width = 9", "indent_style = \"spaces\"\nindent_width = 0"] {
+            let error = Style::parse(wrong, Path::new("x.toml")).unwrap_err().to_string();
+            assert!(error.contains("but must be between 2 and 8"), "{error}");
+        }
+        let error = Style::parse("indent_style = \"mixed\"", Path::new("x.toml")).unwrap_err().to_string();
+        assert!(error.contains("indent_style"), "{error}");
         let error = Style::parse("use_tabs = false", Path::new("x.toml")).unwrap_err().to_string();
         assert!(error.contains("use_tabs"), "{error}");
     }
@@ -132,6 +201,8 @@ mod tests {
     #[test]
     fn a_written_style_reads_back_the_same() {
         let style = Style {
+            indent_style: IndentStyle::Spaces,
+            indent_width: 2,
             max_line_length: 100,
             max_blank_lines: 2,
             continuation: Continuation::Indent,
@@ -144,8 +215,9 @@ mod tests {
             assert_eq!(Style::parse(&style.to_toml(), Path::new("x.toml")).unwrap(), style);
         }
         assert!(Style::default().to_toml().starts_with(
-            "max_line_length = 120
-max_blank_lines = 1
+            "indent_style = \"tabs\"
+indent_width = 4
+max_line_length = 120
 "
         ));
     }

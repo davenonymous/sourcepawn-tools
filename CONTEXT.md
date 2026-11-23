@@ -140,8 +140,8 @@ _Avoid_: test case, sample
 ### pawntidy
 
 **Style**:
-The configurable part of the layout: line length, blank lines, continuation, cuddled `else`, spaces before control
-parentheses, aligned trailing comments, line endings. The tab per block level and the tab width are not part of it.
+The configurable part of the layout: indent style, line length, blank lines, continuation, cuddled `else`, spaces
+before control parentheses, aligned trailing comments, line endings. The tab width is not part of it.
 _Avoid_: settings, preset
 
 **Mode**:
@@ -150,8 +150,13 @@ diff (`--diff`).
 _Avoid_: action, command
 
 **Indentation**:
-The tabs at the start of a line: one per block level, and on a continuation line the extra tabs its rules add.
+The levels at the start of a line, in the indent style: one per block level, and on a continuation line the extra
+levels its rules add.
 _Avoid_: indent spaces
+
+**Indent style**:
+What one level of indentation is made of: a tab, or a fixed number of spaces.
+_Avoid_: indent mode, whitespace style
 
 **Alignment**:
 Spaces that line text up in a column: after the indentation of a continuation line, or before the trailing comments

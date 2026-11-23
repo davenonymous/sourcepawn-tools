@@ -1,5 +1,5 @@
-// policy: CodeLayout::RequireTabIndentation
-// expect: 7 8 9
+// policy: CodeLayout::ProhibitMixedIndentation
+// expect: 7
 void f() {
 	int a = 1;
 	Call(a,
@@ -10,4 +10,6 @@ void f() {
 	/*
 	 * aligned comment lines are fine
 	 */
+	Call(a,
+			a);
 }
