@@ -166,7 +166,7 @@ pawntidy [OPTIONS] [PATHS]...
 | `--color` | `auto`, `always` or `never` | `auto` | Color the diff of `--diff` in the human format. `auto` colors when standard output is a terminal, `NO_COLOR` is unset or empty and `TERM` is not `dumb`. |
 | `-q`, `--quiet` | | | Leave out the summary line and the `reformatted PATH` lines (see [Messages on standard error](#messages-on-standard-error)). |
 | `-h`, `--help` | | | Print the help (`-h` a summary) and exit with 0. |
-| `-V`, `--version` | | | Print the version (`pawntidy 0.1.0`) and exit with 0. |
+| `-V`, `--version` | | | Print the version (`pawntidy 0.2.0`) and exit with 0. |
 
 A wrong command line (an unknown option, a missing or invalid value, two options that exclude each other) prints an
 error with a hint to `--help` and exits with 2.
@@ -639,8 +639,7 @@ above. The exception is a `;` or `,` after a `//` comment, which always ends its
 
 ### Line breaks inside a statement
 
-pawntidy keeps the line breaks the author put inside a statement (see
-[ADR 0003](adr/0003-pawntidy-keeps-the-authors-line-breaks.md)). It removes a break only where a rule above demands it:
+pawntidy keeps the line breaks the author put inside a statement. It removes a break only where a rule above demands it:
 before `;` and `,`, before an opening brace that belongs on its header line, before a cuddled `else` and before the
 `while` of `do ... while`. It adds breaks only to start a unit, after `{`, before `}`, before `else` with
 `cuddle_else = false`, and to wrap a line that is too long.

@@ -5,7 +5,7 @@ own, given with `--template`. This document describes every format field by fiel
 appear in each, what goes to standard output and what to standard error, and how editors and CI systems read the
 output.
 
-The examples check `scripting/example.sp`, a small plugin with a handful of violations, with pawncritic 0.1.0. Its
+The examples check `scripting/example.sp`, a small plugin with a handful of violations, with pawncritic 0.2.0. Its
 source is in [pawncritic.md](pawncritic.md#examples).
 
 ## Contents
@@ -470,7 +470,7 @@ $ pawncritic --format sarif --single-policy CloseHandle scripting/example.sp
               }
             }
           ],
-          "version": "0.1.0"
+          "version": "0.2.0"
         }
       }
     }

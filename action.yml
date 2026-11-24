@@ -16,7 +16,7 @@ inputs:
     default: .
   version:
     description: >-
-      The sourcepawn-tools release to run, such as 0.1.0. Empty runs the release matching the action's own version;
+      The sourcepawn-tools release to run, such as 0.2.0. Empty runs the release matching the action's own version;
       `source` builds the tools from the action's sources (for testing the action).
     default: ""
   severity:

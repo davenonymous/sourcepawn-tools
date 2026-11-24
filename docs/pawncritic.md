@@ -649,7 +649,7 @@ Prints the placeholders of [`--template`](output-formats.md#--template).
 |--------|--------|
 | `-h` | Print a summary of the options. |
 | `--help` | Print the full help. |
-| `-V`, `--version` | Print the version, such as `pawncritic 0.1.0`. |
+| `-V`, `--version` | Print the version, such as `pawncritic 0.2.0`. |
 
 ### Options that cannot be combined
 
@@ -690,7 +690,7 @@ N and above; the name of a severity is the name of the run that starts there. `-
 | 2 | `cruel` | matters of taste with good reasons |
 | 1 | `brutal` | conventions |
 
-The default severity is 3, `harsh` (see [ADR 0004](adr/0004-the-default-severity-is-3.md)). It applies when neither
+The default severity is 3, `harsh`. It applies when neither
 [`--severity`](#options-for-choosing-policies) (or one of its five shortcuts) nor `severity` in the
 [configuration file](#top-level-keys) sets one. A [policy section](#policy-sections) can give a single policy another
 severity.
@@ -1235,8 +1235,8 @@ not count.
 The `Malicious::` policies report code that has no legitimate use in a plugin. They have severity 5 and the themes
 `core`, `malicious` and `security`; `--theme malicious` runs exactly them, to vet a plugin from a third party.
 
-These policies read the code as written (see [ADR 0002](adr/0002-the-source-is-parsed-as-written.md)), so they are
-heuristics, not a proof: a clean run does not make a plugin safe. They see:
+These policies read the code as written, so they are heuristics, not a proof: a clean run does not make a plugin
+safe. They see:
 
 - literal text only: a string literal, a `...` concatenation of string literals, or the template literal of the
   `Format()`, `FormatEx()`, `VFormat()`, `strcopy()`, `StrCat()` or `BuildPath()` call that fills the buffer passed,

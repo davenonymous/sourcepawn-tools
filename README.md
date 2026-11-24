@@ -56,7 +56,7 @@ The grammar, Lua and the built-in policies are compiled into the binaries. Besid
 - The Windows binaries are built with the MSVC toolchain with the C runtime linked in statically, so they need no
   Visual C++ Redistributable (`vcruntime140.dll`).
 
-The commands below use version 0.1.0; replace it with the version you download. Download the archive and
+The commands below use version 0.2.0; replace it with the version you download. Download the archive and
 `SHA256SUMS` into the same directory.
 
 On Linux, check the archive, unpack it and copy the binaries into a directory on your `PATH`. `~/.local/bin` must
@@ -64,20 +64,20 @@ exist and be on your `PATH`:
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
-tar -xzf sourcepawn-tools-0.1.0-linux-x86_64.tar.gz
-cp sourcepawn-tools-0.1.0-linux-x86_64/pawncritic sourcepawn-tools-0.1.0-linux-x86_64/pawntidy ~/.local/bin/
+tar -xzf sourcepawn-tools-0.2.0-linux-x86_64.tar.gz
+cp sourcepawn-tools-0.2.0-linux-x86_64/pawncritic sourcepawn-tools-0.2.0-linux-x86_64/pawntidy ~/.local/bin/
 ```
 
 On Windows, in PowerShell, compute the archive's SHA-256 and compare it with the line for the archive in
 `SHA256SUMS` (`Get-FileHash` prints it in upper case), then unpack the archive:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 sourcepawn-tools-0.1.0-windows-x86_64.zip
+Get-FileHash -Algorithm SHA256 sourcepawn-tools-0.2.0-windows-x86_64.zip
 Get-Content SHA256SUMS
-Expand-Archive sourcepawn-tools-0.1.0-windows-x86_64.zip -DestinationPath .
+Expand-Archive sourcepawn-tools-0.2.0-windows-x86_64.zip -DestinationPath .
 ```
 
-Then add the directory `sourcepawn-tools-0.1.0-windows-x86_64` to your `PATH` (in the Windows settings under
+Then add the directory `sourcepawn-tools-0.2.0-windows-x86_64` to your `PATH` (in the Windows settings under
 "Edit environment variables for your account"), or copy `pawncritic.exe` and `pawntidy.exe` into a directory that is
 on it.
 
@@ -173,7 +173,6 @@ be completed. With `fail-on-violations: false` only the last of these fails it.
 | [docs/writing-policies.md](docs/writing-policies.md) | Writing custom policies in Lua: a first policy step by step, testing included; loading custom policies; the policy table; options; the entry points `query`, `on_match`, `on` and `check`; the syntax tree; the API reference with the built-in libraries; the sandbox and its limits; error messages; contributing built-in policies. |
 | [docs/pawntidy.md](docs/pawntidy.md) | Running pawntidy: its modes and options, the JSON report, examples, the style rule by rule, the configuration file `.pawntidy.toml`, verification, kept regions, writing files, limits, exit status. |
 | [docs/github-action.md](docs/github-action.md) | The GitHub Action SourcePawn Lint: example workflows, inputs, outputs, versions and downloads, GitHub annotations and SARIF, the job summary, changed files only, when the step fails, runner requirements. |
-| [docs/adr/](docs/adr/) | The architecture decisions and their reasons: policies are Lua scripts in sandboxes (0001), the source is parsed as written (0002), pawntidy keeps the author's line breaks and verifies its output (0003), the default severity is 3 (0004), built-in policies share built-in Lua libraries (0005). |
 | [CONTEXT.md](CONTEXT.md) | The glossary: the terms the tools and these documents use. |
 | [CHANGELOG.md](CHANGELOG.md) | The changes of each release. |
 
@@ -318,7 +317,6 @@ action.yml                       the GitHub Action SourcePawn Lint: inputs, outp
 action/lint.py                   its logic: getting the tools, choosing the files, running them, the reports
 tests/action/                    the plugins the CI workflow runs the action on: clean/ passes, dirty/ has violations
 docs/                            the documentation listed above
-docs/adr/                        the architecture decision records
 build.sh                         tests and the Linux and Windows builds into dist/
 .github/workflows/ci.yml         formatting, lints and tests on Linux and Windows, and the test of the action
 .github/workflows/release.yml    the release of a tag vX.Y.Z
