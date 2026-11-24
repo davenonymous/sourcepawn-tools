@@ -2,9 +2,9 @@
 
 local calls = pawn.library("calls")
 
--- Whether a number is the code of a printable ASCII character.
+-- Whether a value is the code of a printable ASCII character.
 local function is_printable(code)
-    return code ~= nil and code >= 32 and code <= 126
+    return type(code) == "number" and code >= 32 and code <= 126
 end
 
 -- The type a declared variable has, as written, or nil.
