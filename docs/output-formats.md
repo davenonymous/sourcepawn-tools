@@ -25,7 +25,7 @@ CI](editors-and-ci.md). pawntidy has a JSON report of its own, described in
 - [`--template`](#--template)
 
 The examples check `scripting/example.sp`, a small plugin with a handful of violations, with
-pawncritic 0.2.0. Its source is in [pawncritic.md](pawncritic.md#examples).
+pawncritic 0.2.1. Its source is in [pawncritic.md](pawncritic.md#examples).
 
 ## Choosing a format
 
@@ -483,7 +483,7 @@ $ pawncritic --format sarif --single-policy CloseHandle scripting/example.sp
               }
             }
           ],
-          "version": "0.2.0"
+          "version": "0.2.1"
         }
       }
     }

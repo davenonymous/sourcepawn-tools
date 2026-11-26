@@ -17,6 +17,7 @@ everything up to the next one.
   of its own, so it covers the rest of the block or, before the first code, the whole file.
 - pawncritic: the hint of `Modern::ProhibitTagCasts` no longer doubles the parentheses of a parenthesized value, and
   the hint of `Security::ProhibitCommandInjection` fits input that is not a player.
+- docs: the documentation is rewritten for readers, and every example in it is checked against the release build.
 
 ## 0.2.0
 

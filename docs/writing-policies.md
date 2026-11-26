@@ -1004,7 +1004,7 @@ A global table of helpers, available everywhere in a policy file, also at its to
 | `pawn.display_width(text, tab_width)` | The width of `text` on screen when it starts a line: a tab reaches the next multiple of `tab_width` (default 4; 0 counts as 1), a wide character such as a CJK ideograph counts 2, a combining or control character 0, every other character 1. |
 | `pawn.is_keyword(word)` | `true` when `word` is a SourcePawn keyword, old or new (see the list below). |
 | `pawn.library(name)` | The table of a built-in library; see [Libraries](#libraries). |
-| `pawn.version` | The pawncritic version as a string, such as `"0.2.0"`. |
+| `pawn.version` | The pawncritic version as a string, such as `"0.2.1"`. |
 
 The words `pawn.is_keyword` knows: `acquire`, `as`, `assert`, `break`, `builtin`, `case`, `cast_to`,
 `catch`, `char`, `const`, `continue`, `decl`, `default`, `defined`, `delete`, `do`, `double`,

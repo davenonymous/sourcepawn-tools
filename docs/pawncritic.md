@@ -966,7 +966,7 @@ The formats and these options are described in detail in [Output formats](output
 |---|---|
 | `-h` | Print a summary of the options. |
 | `--help` | Print the full help. |
-| `-V`, `--version` | Print the version, such as `pawncritic 0.2.0`. |
+| `-V`, `--version` | Print the version, such as `pawncritic 0.2.1`. |
 
 ### Options that cannot be combined
 

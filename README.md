@@ -104,7 +104,7 @@ Every [release](https://github.com/davenonymous/sourcepawn-tools/releases) has t
 The release archives do not contain the documentation; it is in the [`docs/`](docs/README.md)
 directory of the repository, <https://github.com/davenonymous/sourcepawn-tools>.
 
-The commands below use version 0.2.0; replace it with the version you download. Download the archive
+The commands below use version 0.2.1; replace it with the version you download. Download the archive
 and `SHA256SUMS` into the same directory.
 
 On Linux, check the archive, unpack it, and copy the binaries into a directory on your `PATH`, here
@@ -112,20 +112,20 @@ On Linux, check the archive, unpack it, and copy the binaries into a directory o
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
-tar -xzf sourcepawn-tools-0.2.0-linux-x86_64.tar.gz
-cp sourcepawn-tools-0.2.0-linux-x86_64/pawncritic sourcepawn-tools-0.2.0-linux-x86_64/pawntidy ~/.local/bin/
+tar -xzf sourcepawn-tools-0.2.1-linux-x86_64.tar.gz
+cp sourcepawn-tools-0.2.1-linux-x86_64/pawncritic sourcepawn-tools-0.2.1-linux-x86_64/pawntidy ~/.local/bin/
 ```
 
 On Windows, in PowerShell, compute the archive's SHA-256 and compare it with the line for the
 archive in `SHA256SUMS` (`Get-FileHash` prints it in upper case), then unpack the archive:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 sourcepawn-tools-0.2.0-windows-x86_64.zip
+Get-FileHash -Algorithm SHA256 sourcepawn-tools-0.2.1-windows-x86_64.zip
 Get-Content SHA256SUMS
-Expand-Archive sourcepawn-tools-0.2.0-windows-x86_64.zip -DestinationPath .
+Expand-Archive sourcepawn-tools-0.2.1-windows-x86_64.zip -DestinationPath .
 ```
 
-Then add the directory `sourcepawn-tools-0.2.0-windows-x86_64` to your `PATH` (in the Windows
+Then add the directory `sourcepawn-tools-0.2.1-windows-x86_64` to your `PATH` (in the Windows
 settings under "Edit environment variables for your account"), or copy `pawncritic.exe` and
 `pawntidy.exe` into a directory that is on it.
 
@@ -133,9 +133,9 @@ Check that both tools run:
 
 ```
 $ pawncritic --version
-pawncritic 0.2.0
+pawncritic 0.2.1
 $ pawntidy --version
-pawntidy 0.2.0
+pawntidy 0.2.1
 ```
 
 ### From source

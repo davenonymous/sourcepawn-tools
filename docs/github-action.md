@@ -201,7 +201,7 @@ What `@v0` runs is described in [Releases](#releases). To keep a workflow on one
 the release tag:
 
 ```yaml
-- uses: davenonymous/sourcepawn-tools@v0.2.0
+- uses: davenonymous/sourcepawn-tools@v0.2.1
   with:
     paths: scripting
 ```
@@ -212,7 +212,7 @@ Or keep the action at `@v0` and pin only the tools with the `version` input:
 - uses: davenonymous/sourcepawn-tools@v0
   with:
     paths: scripting
-    version: "0.2.0"
+    version: "0.2.1"
 ```
 
 See [How the version is chosen](#how-the-version-is-chosen).
@@ -249,7 +249,7 @@ of the other paths, and the step fails (see [When the step fails](#when-the-step
 
 ### Input: `version`
 
-The sourcepawn-tools release to run, without the leading `v`, such as `0.2.0`. Empty runs the
+The sourcepawn-tools release to run, without the leading `v`, such as `0.2.1`. Empty runs the
 release whose version the action's own `Cargo.toml` states. The value `source` builds the tools from
 the action's own sources instead of downloading a release, which is meant for testing the action
 itself. See [Versions and downloads](#versions-and-downloads).
@@ -333,7 +333,7 @@ Any other value stops the action; see [Errors of the action itself](#errors-of-t
 | `violations` | The number of violations pawncritic reported. `0` when no file was checked. |
 | `unformatted` | The number of files pawntidy would reformat. `0` without `tidy: true` or when no file was checked. |
 | `sarif-file` | The path of the SARIF file, `$RUNNER_TEMP/pawncritic.sarif`, with `sarif: true`. Empty without it, when `changed-only` left no file to check, and when pawncritic stopped before writing the file. |
-| `version` | The sourcepawn-tools version that ran, such as `0.2.0`. With `version: source`, the version in the action's `Cargo.toml`. |
+| `version` | The sourcepawn-tools version that ran, such as `0.2.1`. With `version: source`, the version in the action's `Cargo.toml`. |
 
 `sarif-file` lets a later step keep the report, for example as an artifact of the run:
 
@@ -368,7 +368,7 @@ most recently published 0.x release.
 
 | `version` input | Tools that run |
 |---|---|
-| empty | The release named by `workspace.package.version` in the `Cargo.toml` of the action's ref: `@v0.2.0` runs 0.2.0, `@v0` the release `v0` points to. |
+| empty | The release named by `workspace.package.version` in the `Cargo.toml` of the action's ref: `@v0.2.1` runs 0.2.1, `@v0` the release `v0` points to. |
 | `X.Y.Z` | The release `vX.Y.Z`, whatever the action's ref. |
 | `source` | Built with `cargo build --release --locked` from the action's ref. |
 
@@ -397,7 +397,7 @@ The tools of a version are kept in the runner's tool cache:
 use the cached tools; it then logs:
 
 ```
-Using sourcepawn-tools 0.2.0 from the tool cache
+Using sourcepawn-tools 0.2.1 from the tool cache
 ```
 
 Without the marker file, the action:
@@ -429,7 +429,7 @@ by its [diagnostic level](output-formats.md#severity-and-diagnostic-level).
 The step log of a run on `tests/action/dirty` with `tidy: true`, with the tools in the tool cache:
 
 ```
-Using sourcepawn-tools 0.2.0 from the tool cache
+Using sourcepawn-tools 0.2.1 from the tool cache
 ::warning file=tests/action/dirty/dirty.sp,line=9,col=1,endLine=9,endColumn=5,title=CodeLayout%3A%3AProhibitMixedIndentation::mixed indentation; 1 line is not indented with tabs
 ::warning file=tests/action/dirty/dirty.sp,line=9,col=27,endLine=9,endColumn=49,title=CodeLayout%3A%3ARequireBracedBlocks::the body of `if` is not in braces
 ::warning file=tests/action/dirty/dirty.sp,line=9,col=27,endLine=9,endColumn=48,title=Modern%3A%3AProhibitCloseHandle::`CloseHandle()` is superseded by `delete`
@@ -440,7 +440,7 @@ would reformat tests/action/dirty/dirty.sp
 Each `would reformat <path>` line names a file pawntidy would reformat. The last line is the
 action's own GitHub error annotation; see [When the step fails](#when-the-step-fails). Without the
 tools in the tool cache, the first line is
-`Downloading sourcepawn-tools-0.2.0-linux-x86_64.tar.gz from davenonymous/sourcepawn-tools release v0.2.0`,
+`Downloading sourcepawn-tools-0.2.1-linux-x86_64.tar.gz from davenonymous/sourcepawn-tools release v0.2.1`,
 followed by the output of `gh`.
 
 GitHub shows at most 10 GitHub annotations of each type (error, warning, notice) per step and 50 per
@@ -518,7 +518,7 @@ The job summary of a run on `tests/action/dirty` with `tidy: true`:
 ```markdown
 ## SourcePawn Lint
 
-sourcepawn-tools 0.2.0
+sourcepawn-tools 0.2.1
 
 ### pawncritic
 

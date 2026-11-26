@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "pawn-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anstream",
  "clap",
@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "pawncritic"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anstyle",
  "clap",
@@ -445,7 +445,7 @@ dependencies = [
 
 [[package]]
 name = "pawntidy"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anstyle",
  "clap",

@@ -1218,7 +1218,7 @@ pawntidy --help | -h | --version
 | `--color <when>` | Color the diff of `--diff` in the human format: `auto` (the default), `always` or `never`. `auto` colors when standard output is a terminal, `NO_COLOR` is unset or empty, and `TERM` is not `dumb`. |
 | `-q`, `--quiet` | Leave out the summary line and the `reformatted <path>` lines (see [Messages on standard error](#messages-on-standard-error)). `pawntidy --write --quiet scripting/` prints nothing unless something goes wrong. |
 | `-h`, `--help` | Print the help (`-h` a summary) and exit with 0. |
-| `-V`, `--version` | Print the version (`pawntidy 0.2.0`) and exit with 0. |
+| `-V`, `--version` | Print the version (`pawntidy 0.2.1`) and exit with 0. |
 
 A wrong command line (an unknown option, a missing or invalid value, two options that exclude each
 other) prints an error with a hint to `--help` and exits with 2.
