@@ -241,6 +241,18 @@ impl Lexer<'_> {
     }
 
     /// The length of the line break at `offset`, 0 if there is none.
+    /// The length of the continuation at a backslash in a directive: the
+    /// backslash, the spaces and tabs after it and the line break, or 0
+    /// when no line break follows. As in the compiler, whitespace between
+    /// the backslash and the line break does not end the directive.
+    fn directive_splice_length(&self) -> usize {
+        let blanks = self.bytes[self.offset + 1..].iter().take_while(|byte| matches!(byte, b' ' | b'\t')).count();
+        match self.line_break_length(self.offset + 1 + blanks) {
+            0 => 0,
+            line_break => 1 + blanks + line_break,
+        }
+    }
+
     fn line_break_length(&self, offset: usize) -> usize {
         match (self.bytes.get(offset), self.bytes.get(offset + 1)) {
             (Some(b'\n'), _) => 1,
@@ -295,9 +307,7 @@ impl Lexer<'_> {
             match byte {
                 b'\n' => break,
                 b'\r' if self.peek(1) == Some(b'\n') => break,
-                b'\\' if self.line_break_length(self.offset + 1) > 0 => {
-                    self.offset += 1 + self.line_break_length(self.offset + 1);
-                }
+                b'\\' => self.offset += self.directive_splice_length().max(1),
                 b'/' if self.peek(1) == Some(b'/') => break,
                 b'/' if self.peek(1) == Some(b'*') => {
                     self.scan_block_comment();
@@ -319,16 +329,13 @@ impl Lexer<'_> {
         }
     }
 
-    /// A line comment ends at the line break, unless a backslash splices
-    /// the next line onto it, as in C.
+    /// A line comment ends at the line break, also after a backslash: unlike
+    /// C, the compiler does not continue it (and reports error 49).
     fn scan_line_comment(&mut self) {
         while let Some(byte) = self.peek(0) {
             match byte {
                 b'\n' => break,
                 b'\r' if self.peek(1) == Some(b'\n') => break,
-                b'\\' if self.line_break_length(self.offset + 1) > 0 => {
-                    self.offset += 1 + self.line_break_length(self.offset + 1);
-                }
                 _ => self.offset += 1,
             }
         }
@@ -470,6 +477,18 @@ mod tests {
         let tokens = kinds_and_texts("a ä $");
         assert_eq!(tokens[1], (TokenKind::Unknown, "ä"));
         assert_eq!(tokens[2], (TokenKind::Unknown, "$"));
+    }
+
+    #[test]
+    fn line_comments_end_at_the_line_break_after_a_backslash() {
+        let tokens = kinds_and_texts("// a\\\nb");
+        assert_eq!(tokens, [(TokenKind::LineComment, "// a\\"), (TokenKind::Word, "b")]);
+    }
+
+    #[test]
+    fn directives_continue_after_a_backslash_and_whitespace() {
+        let tokens = kinds_and_texts("#define X 1 \\ \t\nint y;");
+        assert_eq!(tokens[0], (TokenKind::Directive, "#define X 1 \\ \t\nint y;"));
     }
 
     #[test]

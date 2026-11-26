@@ -899,7 +899,7 @@ The position of an annotation decides which lines it covers:
 
 | Position | Lines covered |
 |---|---|
-| After code on the same line, or after another comment on that line | That line. |
+| After code on the same line (comments do not count as code: `/* x */ // no critic` stands on a line of its own) | That line. |
 | Before the first code of the file, with only comments before it (a directive such as `#pragma` is code) | The whole file, from line 1 on. This also silences the policies that report on the file as a whole at line 1, such as `Complexity::ProhibitLongFiles` and `Modern::RequireNewDecls`. |
 | On a line of its own, anywhere else | From the next line up to and including the line that closes the innermost enclosing block, enum, enum struct, methodmap, methodmap property, struct, struct initializer (such as `public Plugin myinfo = {...}`), `switch`, typeset or funcenum. At the top level, to the end of the file. |
 | Before code on the same line, as in `/* no critic */ CloseHandle(g_h);` | The same as on a line of its own: from the next line on, not its own line. |

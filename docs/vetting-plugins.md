@@ -191,9 +191,6 @@ safe. They cannot see:
   `Format()` into a buffer in the same function: text read from a file, put together in another
   function, decoded with arithmetic, or downloaded. See [What the Malicious and Security policies
   can see](policies.md#what-the-malicious-and-security-policies-can-see).
-- **Character codes with a terminator.** A char array of character codes that ends in `0`, as
-  correct code writes it, is not reported yet. Read every array of numbers that stands where text
-  belongs.
 - **Macros and files that are not part of the download.** pawncritic does not expand `#define` and
   does not read included files it is not given. Include files shipped with the plugin are checked,
   as long as you check the whole download.

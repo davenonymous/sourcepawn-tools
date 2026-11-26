@@ -18,8 +18,21 @@ local function declared_type(declaration)
     return type_node and type_node:text()
 end
 
+-- The integer values of the items of an array literal, false for an item
+-- other than an integer literal.
+local function item_codes(array)
+    local codes = {}
+    for _, item in ipairs(array:named_children()) do
+        if item:kind() ~= "comment" then
+            codes[#codes + 1] = item:kind() == "int_literal" and tonumber(item:text())
+        end
+    end
+    return codes
+end
+
 -- The text an array literal spells, or nil: it must initialize a char array
--- and hold at least `min_length` items, all integers of printable characters.
+-- and hold at least `min_length` items, all integers of printable characters,
+-- optionally followed by one 0, the terminator of a string.
 local function numeric_text(array, min_length)
     local declaration = array:parent()
     if array:field() ~= "initialValue" or not declaration then
@@ -29,15 +42,16 @@ local function numeric_text(array, min_length)
     if type_text ~= "char" and type_text ~= "String" then
         return nil
     end
+    local codes = item_codes(array)
+    if codes[#codes] == 0 then
+        codes[#codes] = nil
+    end
     local characters = {}
-    for _, item in ipairs(array:named_children()) do
-        if item:kind() ~= "comment" then
-            local code = item:kind() == "int_literal" and tonumber(item:text())
-            if not is_printable(code) then
-                return nil
-            end
-            characters[#characters + 1] = string.char(code)
+    for _, code in ipairs(codes) do
+        if not is_printable(code) then
+            return nil
         end
+        characters[#characters + 1] = string.char(code)
     end
     return #characters >= min_length and table.concat(characters) or nil
 end
@@ -69,8 +83,8 @@ return {
     description = [[
         Plain text written so that a reader cannot see it is how malicious plugins hide commands,
         ConVar names and addresses from a review. Reported are a char array initialized with at
-        least `min_length` integers that are all printable characters (`char cmd[] = { 114, 99,
-        ... }`), a string literal with at least `min_escapes` escapes (`\x72`, `\114`) of printable
+        least `min_length` integers that are all printable characters, optionally followed by the
+        terminator `0` (`char cmd[] = { 114, 99, ... }`), a string literal with at least `min_escapes` escapes (`\x72`, `\114`) of printable
         characters, and a string literal of at least `min_blob_length` characters that are all
         base64 or hex digits.
     ]],

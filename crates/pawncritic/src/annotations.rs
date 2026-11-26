@@ -5,7 +5,8 @@
 //! - `foo(); // no critic` after code silences every policy on that line;
 //!   `// no critic (ProhibitCloseHandle, Modern::)` only the policies whose
 //!   names contain one of the listed texts, ignoring case.
-//! - The same comment on a line of its own silences from the next line to
+//! - The same comment on a line of its own (comments before it on the line
+//!   do not count as code) silences from the next line to
 //!   a `// use critic` or the end of the enclosing block, or of the file
 //!   at the top level. Before the first code of a file, it silences the
 //!   whole file from its first line, so it also covers violations reported
@@ -70,7 +71,8 @@ impl Suppressions {
             }
             let Some(annotation) = parse_annotation(token.text(text)) else { continue };
             let line = file.position(token.span.start).line;
-            let follows_code = index > 0 && file.position(tokens[index - 1].span.end).line == line;
+            let previous_code = tokens[..index].iter().rev().find(|earlier| !earlier.kind.is_comment());
+            let follows_code = previous_code.is_some_and(|code| file.position(code.span.end).line == line);
             let precedes_code = tokens[..index].iter().all(|earlier| earlier.kind.is_comment());
             match annotation {
                 Annotation::UseCritic => {
@@ -216,5 +218,14 @@ mod tests {
         let after_code = suppressions("int x;\n// no critic (ProhibitLongFiles)\nint y;\n");
         assert!(!after_code.is_suppressed("Complexity::ProhibitLongFiles", 1));
         assert!(after_code.is_suppressed("Complexity::ProhibitLongFiles", 3));
+    }
+
+    #[test]
+    fn comments_before_an_annotation_do_not_count_as_code() {
+        let header = suppressions("/* header */ // no critic (CloseHandle)\nint x;\nint y;\n");
+        assert!(header.is_suppressed("Modern::ProhibitCloseHandle", 3));
+
+        let in_block = suppressions("void f() {\n\t/* x */ // no critic\n\ta();\n}\n");
+        assert!(in_block.is_suppressed("Any::Policy", 3));
     }
 }

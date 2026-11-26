@@ -22,6 +22,9 @@ return {
         old_type_cast = function(node, ctx)
             local tag_node = node:child_by_field("type")
             local value_node = node:child_by_field("value")
+            if value_node:kind() == "parenthesized_expression" then
+                value_node = value_node:child_by_field("expression") or value_node
+            end
             local tag = tags.name(tag_node:text())
             local type_name = replacements[tag] or tag
             ctx:report(node, ("old-style tag cast `%s:`; use `view_as<%s>(...)`"):format(tag, type_name), {

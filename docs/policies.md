@@ -826,8 +826,8 @@ public void OnPluginStart() {
 
 - **Character codes.** The initializer of a `char` (or old `String:`) array that holds at least
   `min_length` items, all integer literals of printable ASCII characters (32 to 126). Arrays of
-  other types, such as lookup tables of `int`, are not checked. An array that ends in `0`, the
-  terminator of a string, is not reported yet.
+  other types, such as lookup tables of `int`, are not checked. One `0` at the end, the terminator
+  of a string, is allowed and does not count toward `min_length`.
 - **Escapes.** A string literal with at least `min_escapes` escapes (`\xNN`, `\NNN`) of printable
   ASCII characters. Escapes of control characters, such as the chat color codes `\x01` to `\x08`, do
   not count.
@@ -1345,12 +1345,11 @@ void MoveToTeam(int client, TFTeam team) {
 }
 ```
 
-**Details:** reports every tag cast. The hint wraps the cast value as written, so a value that
-already has parentheses gets a second pair; drop one when you apply it.
+**Details:** reports every tag cast.
 
 **Message:** ``` old-style tag cast `<tag>:`; use `view_as<<type>>(...)` ```. `<type>` is `float`
 for `Float`, `int` for `_`, and the tag's own name otherwise. **Hint:** `view_as<<type>>(<value>)`,
-with the cast value.
+with the cast value; parentheses around it are left out.
 
 ### Modern::RequireNewDecls
 
@@ -2093,7 +2092,7 @@ $ pawncritic --single-policy ProhibitCommandInjection plugin.sp
 plugin.sp:4:34: [5] `map` holds client input and goes into ServerCommand()  Security::ProhibitCommandInjection
     4 |     ServerCommand("changelevel %s", map);
       |                                     ^^^
-      = hint: refer to players by `#userid`; do not pass free text
+      = hint: check the value, or use a function instead of a command line (`#userid` for players)
 
 1 violation in 1 of 1 file (1 of severity 5).
 ```
@@ -2131,7 +2130,7 @@ client input from a variable.
   from a variable.
 
 **Message:** ``` `<name>` holds client input and goes into <function>() ```. **Hint:**
-``refer to players by `#userid`; do not pass free text``.
+``check the value, or use a function instead of a command line (`#userid` for players)``.
 
 **Options:**
 

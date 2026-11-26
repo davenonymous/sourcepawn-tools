@@ -106,6 +106,16 @@ pub(crate) struct Annotations {
 
 pub(crate) const NO_UNIT: u32 = u32::MAX;
 
+/// Whether a directive's text holds a backslash with spaces or tabs between
+/// it and a line break.
+fn continues_after_blanks(directive: &str) -> bool {
+    directive.match_indices('\\').any(|(offset, _)| {
+        let after = &directive[offset + 1..];
+        let rest = after.trim_start_matches([' ', '\t']);
+        rest.len() < after.len() && (rest.starts_with('\n') || rest.starts_with("\r\n"))
+    })
+}
+
 /// Operators that mean the same wherever they stand.
 const BINARY_OPERATORS: &[&str] = &[
     "=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "~=", "<<=", ">>=", ">>>=", "==", "!=", "<=", ">=", "&&",
@@ -497,6 +507,9 @@ impl Annotator<'_> {
     /// backslash before a line break) between tokens. The compiler joins
     /// the lines, which matters where a line break may end a statement, and
     /// the layout cannot keep a splice, so those items stay as they are.
+    /// So do the lines of a directive continued after a backslash and
+    /// whitespace: the compiler and the lexer continue it, the parser does
+    /// not, so the tree does not match the tokens there.
     fn splice_lines(&self) -> Vec<(usize, usize)> {
         let text = self.file.text();
         let lines = self.file.source.lines();
@@ -516,7 +529,25 @@ impl Annotator<'_> {
             }
             gaps_start = next_start;
         }
+        ranges.extend(self.blank_continued_directive_lines());
         ranges
+    }
+
+    /// The lines of each directive token continued after a backslash and
+    /// whitespace, joined with those of the top-level item it starts in.
+    fn blank_continued_directive_lines(&self) -> Vec<(usize, usize)> {
+        let text = self.file.text();
+        let lines = self.file.source.lines();
+        self.file
+            .tokens
+            .iter()
+            .filter(|token| token.kind == TokenKind::Directive && continues_after_blanks(token.text(text)))
+            .map(|token| {
+                let token_lines = (lines.line_of(token.span.start), lines.line_of(token.span.end - 1));
+                let (first, last) = self.item_lines_at(token.span.start).unwrap_or(token_lines);
+                (first.min(token_lines.0), last.max(token_lines.1))
+            })
+            .collect()
     }
 
     /// The lines of the top-level items that hold a `#` that is not first

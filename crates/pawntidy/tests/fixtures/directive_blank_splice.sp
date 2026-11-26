@@ -1,0 +1,7 @@
+#define X 1 \ 
+	+ 2
+
+void Formatted()
+{
+	if (a) b();
+}

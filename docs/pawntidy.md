@@ -1100,7 +1100,9 @@ endings:
 - **Items that hold a line splice** (reason `line_splice`): a backslash directly before a line
   break, between tokens (not inside a string, a comment or a directive). The compiler joins such
   lines, which matters in a file without `#pragma semicolon 1`, and the layout cannot keep the
-  splice.
+  splice. The same reason covers a directive continued by a backslash with spaces or tabs after
+  it: the compiler continues the directive onto the next line, the parser does not, so the item
+  and the lines the directive takes in are kept.
 - **Items that hold a `#` that is not first on its line** (reason `stray_hash`), such as
   `if (a) b(); #pragma y`. After code, such a `#` starts no directive for the compiler, and the
   layout could move it to the start of a line, where it would start one. pawntidy reads a directive

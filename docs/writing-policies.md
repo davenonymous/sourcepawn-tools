@@ -898,9 +898,9 @@ tables with these keys:
 | `number` | An integer or float literal, with digit separators and suffix letters. |
 | `string` | A string literal, quotes included. An unterminated string ends at the end of its line. |
 | `char` | A character literal, quotes included. |
-| `line_comment` | `//` to the end of the line, without trailing whitespace; a backslash at the end of the line continues it. |
+| `line_comment` | `//` to the end of the line, without trailing whitespace. A backslash at the end of the line does not continue it, as for the compiler. |
 | `block_comment` | `/*` to `*/`, or to the end of the file when unterminated. |
-| `directive` | A preprocessor directive: from a `#` that only whitespace precedes on its line to the end of its logical line (continued with a backslash at the end of a line), block comments included, without trailing whitespace. A `//` comment after it is a token of its own. |
+| `directive` | A preprocessor directive: from a `#` that only whitespace precedes on its line to the end of its logical line (continued with a backslash at the end of a line, also when spaces or tabs follow the backslash), block comments included, without trailing whitespace. A `//` comment after it is a token of its own. |
 | `punct` | An operator or punctuation mark, the longest that matches, such as `>>>=`, `...` or `::`. |
 | `unknown` | One character the lexer does not know, such as `$` or a `#` within a line. |
 

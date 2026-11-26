@@ -150,7 +150,8 @@ pawntidy: warning: scripting/syntax_error.sp: lines 7-15 kept as they are; the p
   code that follows. `pawncritic --single-policy RequireParsableCode <file>` shows where the problem
   starts.
 - **`they hold a line splice (a backslash at the end of a line)`**: a backslash before a line break,
-  outside strings, comments and directives. Join the lines.
+  outside strings, comments and directives. Join the lines. Or a backslash followed by spaces or
+  tabs at the end of a directive line; remove the whitespace after the backslash.
 - **``they hold a `#` that is not first on its line``**: a `#` after code or after a comment on the
   same line, such as `/* c */ #pragma y`. Put the directive on a line of its own.
 

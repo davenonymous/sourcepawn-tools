@@ -4,6 +4,8 @@ local calls = pawn.library("calls")
 local functions = pawn.library("functions")
 local taint = pawn.library("taint")
 
+local INJECTION_HINT = "check the value, or use a function instead of a command line (`#userid` for players)"
+
 local parsed_options, sinks, specs
 local function read_options(options)
     if parsed_options ~= options then
@@ -64,7 +66,7 @@ return {
                 for index, argument in ipairs(first and calls.arguments(call) or {}) do
                     if index >= first and is_tainted(argument) then
                         ctx:report(argument, ("`%s` holds client input and goes into %s()"):format(
-                            argument:text(), name), { hint = "refer to players by `#userid`; do not pass free text" })
+                            argument:text(), name), { hint = INJECTION_HINT })
                     end
                 end
             end

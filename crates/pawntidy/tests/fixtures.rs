@@ -81,6 +81,15 @@ fn items_with_line_splices_are_reported_and_kept() {
 }
 
 #[test]
+fn directives_continued_after_whitespace_are_reported_and_kept() {
+    let input = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/directive_blank_splice.sp");
+    let formatted = format_source(&input, &read_text(&input), &Style::default()).unwrap();
+    let kept: Vec<(usize, usize, pawntidy::KeptReason)> =
+        formatted.kept.iter().map(|region| (region.first_line, region.last_line, region.reason)).collect();
+    assert_eq!(kept, vec![(1, 2, pawntidy::KeptReason::LineSplice)]);
+}
+
+#[test]
 fn items_with_a_stray_hash_are_reported_and_kept() {
     let input = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/stray_hash.sp");
     let formatted = format_source(&input, &read_text(&input), &Style::default()).unwrap();
