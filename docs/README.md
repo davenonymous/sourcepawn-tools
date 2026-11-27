@@ -1,8 +1,8 @@
 # sourcepawn-tools documentation
 
 pawncritic checks SourcePawn plugins against policies, pawntidy formats them, and the GitHub Action
-SourcePawn Lint runs both in CI. New here? Read the [README](../README.md) for installation and a
-quick start, then the [tutorial](tutorial-modernizing-a-plugin.md).
+SourcePawn Lint runs both in CI. New here? Read the [README](../README.md) for a quick start and
+[BUILD.md](../BUILD.md) for installation, then the [tutorial](tutorial-modernizing-a-plugin.md).
 
 ## Guides
 
@@ -31,8 +31,8 @@ quick start, then the [tutorial](tutorial-modernizing-a-plugin.md).
 | Page | Covers |
 |---|---|
 | [Architecture](architecture.md) | How both tools work inside, the tests that keep code and docs in step, adding a built-in policy, changing the formatter |
-| [Building and testing](../README.md#building-and-testing) | Building from source, cross-compiling for Windows, the test suite |
-| [Releasing](../README.md#releasing) | Publishing a release |
+| [Building and testing](../BUILD.md#building-and-testing) | Building from source, cross-compiling for Windows, the test suite |
+| [Releasing](../BUILD.md#releasing) | Publishing a release |
 
 ## Finding something
 

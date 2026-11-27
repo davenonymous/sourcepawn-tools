@@ -359,7 +359,7 @@ itself](#errors-of-the-action-itself).
 ### Releases
 
 Every release of this repository is a tag `vX.Y.Z` whose version matches the workspace version in
-`Cargo.toml`. Its assets are listed in [From a release](../README.md#from-a-release).
+`Cargo.toml`. Its assets are listed in [From a release](../BUILD.md#from-a-release).
 
 The major tag `vX` moves to the commit of every release when it is published, so `@v0` points to the
 most recently published 0.x release.

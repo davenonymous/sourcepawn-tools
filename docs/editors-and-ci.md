@@ -23,7 +23,7 @@ annotations or to code scanning, with a job summary.
 ## Before you start
 
 - The setups assume `pawncritic` and `pawntidy` are on the `PATH`; see
-  [Installation](../README.md#installation).
+  [Installation](../BUILD.md#installation).
 - **Exit status 1 is not a failure.** pawncritic exits with 1 when it found violations, and
   `pawntidy --check` when a file would change. An editor integration must not report that as a
   failed run. Exit status 2 means something could not be checked; the reason is on standard error.
@@ -285,7 +285,7 @@ alone.
 ## Any other CI
 
 Both tools need nothing but their binaries: no SourceMod, no compiler and no network. Download a
-[release](../README.md#from-a-release) in the job, then run:
+[release](../BUILD.md#from-a-release) in the job, then run:
 
 ```sh
 pawntidy --check scripting/

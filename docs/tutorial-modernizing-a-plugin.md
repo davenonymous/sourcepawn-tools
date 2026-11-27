@@ -12,7 +12,7 @@ You will learn how to:
 - leave the layout to pawntidy,
 - keep the plugin clean with a configuration file, a Git hook and CI.
 
-It assumes both tools are installed (see [Installation](../README.md#installation)) and that you
+It assumes both tools are installed (see [Installation](../BUILD.md#installation)) and that you
 work in the plugin's repository, `/home/user/greeter`.
 
 - [The plugin](#the-plugin)
